@@ -142,6 +142,26 @@
 };
 
 &rbus {
+	sb1@1c000 {
+		compatible = "realtek,rtd1295-sb1";
+		reg = <0x1c000 0x18>;
+	};
+
+	sb3@1c200 {
+		compatible = "realtek,rtd1295-sb3";
+		reg = <0x1c200 0x18>;
+	};
+
+	sb0@1c400 {
+		compatible = "realtek,rtd1295-sb0";
+		reg = <0x1c400 0x10>;
+	};
+
+	sb4@1c600 {
+		compatible = "realtek,rtd1295-sb4";
+		reg = <0x1c600 0x18>;
+	};
+
 	mali: gpu@50000 {
 		compatible = "realtek,rtd1295-mali", "arm,mali-t820";
 		reg = <0x50000 0x10000>;
