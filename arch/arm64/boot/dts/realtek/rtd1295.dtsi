@@ -204,6 +204,11 @@
 		reg = <0x1c600 0x18>;
 	};
 
+	thermal@1d100 {
+		compatible = "realtek,rtd1295-thermal";
+		reg = <0x1d100 0x70>;
+	};
+
 	mali: gpu@50000 {
 		compatible = "realtek,rtd1295-mali", "arm,mali-t820";
 		reg = <0x50000 0x10000>;
