@@ -209,6 +209,12 @@
 		reg = <0x1d100 0x70>;
 	};
 
+	pcie2: pci@3b000 {
+		compatible = "realtek,rtd1295-pcie";
+		reg = <0x3b000 0x1000>,
+		      <0x3c000 0x1000>;
+	};
+
 	mali: gpu@50000 {
 		compatible = "realtek,rtd1295-mali", "arm,mali-t820";
 		reg = <0x50000 0x10000>;
