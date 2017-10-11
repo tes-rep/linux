@@ -139,7 +139,7 @@ static void rtd129x_ahci_phy_init(struct device *dev, void __iomem *base, int po
 		writel_delay(0x587a2111, base + 0xF60);
 		writel_delay(0x587a6111, base + 0xF60);
 		writel_delay(0x587aa111, base + 0xF60);
-	} else if (false) { // for DS418j
+	} else if (of_machine_is_compatible("synology,ds418j")) { // for DS418j
 		printk("[SATA] set tx-driving to L (level 8)\n");
 		if(port==0) {
 			writel_delay(0x94a82011, base + 0xF60);
