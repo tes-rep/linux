@@ -4,6 +4,7 @@
  *
  * Copyright (C) 2015-2017 Russell King.
  */
+#include <linux/delay.h>
 #include <linux/interrupt.h>
 #include <linux/io.h>
 #include <linux/module.h>
@@ -133,8 +134,9 @@ static irqreturn_t dw_hdmi_cec_hardirq(int irq, void *data)
 
 	dw_hdmi_write(cec, stat, HDMI_IH_CEC_STAT0);
 
-	if (stat & CEC_STAT_ERROR_INIT) {
-		cec->tx_status = CEC_TX_STATUS_ERROR;
+	if ((stat & (CEC_STAT_DONE|CEC_STAT_ERROR_INIT)) == (CEC_STAT_DONE|CEC_STAT_ERROR_INIT)) {
+		pr_debug("dw_hdmi_cec_hardirq: stat=%02x LOW_DRIVE\n", stat);
+		cec->tx_status = CEC_TX_STATUS_LOW_DRIVE;
 		cec->tx_done = true;
 		ret = IRQ_WAKE_THREAD;
 	} else if (stat & CEC_STAT_DONE) {
@@ -147,6 +149,10 @@ static irqreturn_t dw_hdmi_cec_hardirq(int irq, void *data)
 		ret = IRQ_WAKE_THREAD;
 	} else if (stat & CEC_STAT_ARBLOST) {
 		cec->tx_status = CEC_TX_STATUS_ARB_LOST;
+		cec->tx_done = true;
+		ret = IRQ_WAKE_THREAD;
+	} else if (stat & CEC_STAT_ERROR_INIT) {
+		cec->tx_status = CEC_TX_STATUS_ERROR;
 		cec->tx_done = true;
 		ret = IRQ_WAKE_THREAD;
 	}
@@ -181,6 +187,8 @@ static irqreturn_t dw_hdmi_cec_thread(int irq, void *data)
 
 	if (cec->tx_done) {
 		cec->tx_done = false;
+		if (cec->tx_status == CEC_TX_STATUS_LOW_DRIVE)
+			msleep(100);
 		cec_transmit_attempt_done(adap, cec->tx_status);
 	}
 	if (cec->rx_done) {
