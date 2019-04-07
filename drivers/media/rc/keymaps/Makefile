@@ -118,4 +118,5 @@ obj-$(CONFIG_RC_MAP) += rc-adstech-dvb-t-pci.o \
 			rc-winfast-usbii-deluxe.o \
 			rc-su3000.o \
 			rc-xbox-dvd.o \
+			rc-x96max.o \
 			rc-zx-irdec.o
