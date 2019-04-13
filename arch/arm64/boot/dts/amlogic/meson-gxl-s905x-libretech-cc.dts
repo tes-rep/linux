@@ -86,7 +86,7 @@
 
 	sound {
 		compatible = "simple-audio-card";
-		simple-audio-card,name = "meson-gx-audio";
+		simple-audio-card,name = "HDMI";
 
 		simple-audio-card,dai-link@0 {
 			/* HDMI Output */
