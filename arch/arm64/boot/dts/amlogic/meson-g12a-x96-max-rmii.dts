@@ -181,11 +181,11 @@
 };
 
 &ethmac {
-        status = "okay";
-        pinctrl-0 = <&eth_leds_pins>;
+        pinctrl-0 = <&eth_rmii_pins>;
         pinctrl-names = "default";
-        phy-handle = <&internal_ephy>;
+        status = "okay";
         phy-mode = "rmii";
+        phy-handle = <&internal_ephy>;
 };
 
 &pwm_ef {
