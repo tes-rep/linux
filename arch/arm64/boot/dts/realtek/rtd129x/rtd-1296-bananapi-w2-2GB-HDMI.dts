@@ -8,7 +8,7 @@
 /* 0x01ffe000 ~ 0x02001fff */
 /memreserve/ RPC_RINGBUF_PHYS RPC_RINGBUF_SIZE;
 /* 0x02200000 ~ 0x025fffff */
-/memreserve/ ROOTFS_NORMAL_START ROOTFS_NORMAL_SIZE;
+/* /memreserve/ ROOTFS_NORMAL_START ROOTFS_NORMAL_SIZE; */
 /* 0x02600000 ~ 0x031fffff */
 /memreserve/ ION_AUDIO_HEAP_PHYS ION_AUDIO_HEAP_SIZE ;
 /* 0x03200000 ~ 0x0e9fffff */
@@ -22,13 +22,6 @@
 #include "rtd-1296-saola-common.dtsi"
 
 / {
-	chosen {
-		/* linux,initrd-start = <ROOTFS_NORMAL_START>; */
-		/* linux,initrd-end = <ROOTFS_NORMAL_END>; */ 
-		/* bootargs = "earlycon=uart8250,mmio32,0x98007800 console=ttyS0,115200 init=/init androidboot.hardware=kylin androidboot.storage=emmc loglevel=4"; */
-                bootargs = "boot=LABEL=LIBREELEC disk=LABEL=STORAGE ssh textmode earlycon=uart8250,mmio32,0x98007800 console=ttyS0,115200";
-	};
-
 	/*
 	 * NOTE:
 	 * <flag size base>
