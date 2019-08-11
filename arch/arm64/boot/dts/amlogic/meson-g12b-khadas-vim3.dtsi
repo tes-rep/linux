@@ -152,6 +152,31 @@
 	clock-latency = <50000>;
 };
 
+&ext_mdio {
+	external_phy: ethernet-phy@0 {
+		/* Realtek RTL8211F (0x001cc916) */
+		reg = <0>;
+		max-speed = <1000>;
+
+		interrupt-parent = <&gpio_intc>;
+		/* MAC_INTR on GPIOZ_14 */
+		interrupts = <26 IRQ_TYPE_LEVEL_LOW>;
+	};
+};
+
+&ethmac {
+        pinctrl-0 = <&eth_pins>, <&eth_rgmii_pins>;
+        pinctrl-names = "default";
+        status = "okay";
+        phy-mode = "rgmii";
+        phy-handle = <&external_phy>;
+        amlogic,tx-delay-ns = <2>;
+};
+
+&frddr_a {
+	status = "okay";
+};
+
 &frddr_b {
 	status = "okay";
 };
