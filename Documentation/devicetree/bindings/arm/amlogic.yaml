@@ -76,7 +76,7 @@ properties:
         items:
           - enum:
               - amlogic,p241
-              - libretech,aml-s805x-ac
+              - libretech,lafrite
           - const: amlogic,s805x
           - const: amlogic,meson-gxl
 
