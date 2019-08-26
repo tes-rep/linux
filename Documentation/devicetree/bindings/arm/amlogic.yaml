@@ -95,7 +95,7 @@ properties:
               - amlogic,p212
               - hwacom,amazetv
               - khadas,vim
-              - libretech,cc
+              - libretech,lepotato
               - nexbox,a95x
               - seirobotics,sei510
           - const: amlogic,s905x
