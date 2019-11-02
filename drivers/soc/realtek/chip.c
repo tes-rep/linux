@@ -54,6 +54,14 @@ static const char *rtd1295_name(struct device *dev, const struct rtd_soc *s)
 {
 	void __iomem *base;
 
+	base = of_iomap(dev->of_node, 2);
+	if (base) {
+		u32 efuse = readl_relaxed(base);
+		iounmap(base);
+		if ((efuse & 0x3) == 0x1)
+			return "RTD1294";
+	}
+
 	base = of_iomap(dev->of_node, 1);
 	if (base) {
 		u32 chipinfo1 = readl_relaxed(base);
