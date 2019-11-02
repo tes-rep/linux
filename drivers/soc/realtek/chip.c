@@ -50,6 +50,11 @@ static const struct rtd_soc_revision rtd1619_revisions[] = {
 	{ }
 };
 
+static const struct rtd_soc_revision rtd1319_revisions[] = {
+	{ "A00", 0x00000000 },
+	{ }
+};
+
 struct rtd_soc {
 	u32 chip_id;
 	const char *family;
@@ -94,6 +99,8 @@ static const struct rtd_soc rtd_soc_families[] = {
 	{ 0x00006421, "RTD1295", rtd1295_name, rtd1295_revisions, "Kylin" },
 	{ 0x00006481, "RTD1395", default_name, rtd1395_revisions, "Hercules" },
 	{ 0x00006525, "RTD1619", default_name, rtd1619_revisions, "Thor" },
+	// TODO fill in chip_id
+	{ 0xFFFFFFFF, "RTD1319", default_name, rtd1319_revisions, "Hank" },
 };
 
 static const struct rtd_soc *rtd_soc_by_chip_id(u32 chip_id)
