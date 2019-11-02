@@ -2205,6 +2205,7 @@ L:	linux-realtek-soc@lists.infradead.org (moderated for non-subscribers)
 S:	Maintained
 F:	arch/arm64/boot/dts/realtek/
 F:	Documentation/devicetree/bindings/arm/realtek.yaml
+F:	Documentation/devicetree/bindings/soc/realtek/
 
 ARM/RENESAS ARM64 ARCHITECTURE
 M:	Geert Uytterhoeven <geert+renesas@glider.be>
