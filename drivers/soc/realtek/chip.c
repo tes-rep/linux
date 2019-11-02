@@ -76,6 +76,7 @@ static const char *rtd1295_name(struct device *dev, const struct rtd_soc *s)
 	if (base) {
 		u32 efuse = readl_relaxed(base);
 		iounmap(base);
+		dev_info(dev, "efuse: 0x%08x\n", efuse);
 		if ((efuse & 0x3) == 0x1)
 			return "RTD1294";
 	}
