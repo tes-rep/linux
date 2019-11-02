@@ -59,6 +59,8 @@ static const char *rtd1295_name(struct device *dev, const struct rtd_soc *s)
 		u32 chipinfo1 = readl_relaxed(base);
 		iounmap(base);
 		if (chipinfo1 & BIT(11)) {
+			if (chipinfo1 & BIT(4))
+				return "RTD1293";
 			return "RTD1296";
 		}
 	}
