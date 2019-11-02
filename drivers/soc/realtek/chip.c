@@ -50,9 +50,25 @@ static const char *default_name(struct device *dev, const struct rtd_soc *s)
 	return s->family;
 }
 
+static const char *rtd1295_name(struct device *dev, const struct rtd_soc *s)
+{
+	void __iomem *base;
+
+	base = of_iomap(dev->of_node, 1);
+	if (base) {
+		u32 chipinfo1 = readl_relaxed(base);
+		iounmap(base);
+		if (chipinfo1 & BIT(11)) {
+			return "RTD1296";
+		}
+	}
+
+	return "RTD1295";
+}
+
 static const struct rtd_soc rtd_soc_families[] = {
 	{ 0x00006329, "RTD1195", default_name, rtd1195_revisions, "Phoenix" },
-	{ 0x00006421, "RTD1295", default_name, rtd1295_revisions, "Kylin" },
+	{ 0x00006421, "RTD1295", rtd1295_name, rtd1295_revisions, "Kylin" },
 };
 
 static const struct rtd_soc *rtd_soc_by_chip_id(u32 chip_id)
