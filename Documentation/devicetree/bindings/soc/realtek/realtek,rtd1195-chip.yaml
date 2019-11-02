@@ -11,13 +11,15 @@ maintainers:
 
 description: |
   The Realtek SoCs have some registers to identify the chip and revision.
+  To identify the exact model within a family, further registers are needed.
 
 properties:
   compatible:
     const: "realtek,rtd1195-chip"
 
   reg:
-    maxItems: 1
+    minItems: 1
+    maxItems: 2
 
 required:
   - compatible
@@ -28,5 +30,11 @@ examples:
     chip-info@1801a200 {
         compatible = "realtek,rtd1195-chip";
         reg = <0x1801a200 0x8>;
+    };
+  - |
+    chip-info@9801a200 {
+        compatible = "realtek,rtd1195-chip";
+        reg = <0x9801a200 0x8>,
+              <0x98007028 0x4>;
     };
 ...
