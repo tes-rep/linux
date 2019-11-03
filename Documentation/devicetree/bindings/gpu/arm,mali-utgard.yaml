@@ -26,6 +26,7 @@ properties:
               - allwinner,sun7i-a20-mali
               - allwinner,sun8i-h3-mali
               - allwinner,sun50i-a64-mali
+              - realtek,rtd1195-mali
               - rockchip,rk3036-mali
               - rockchip,rk3066-mali
               - rockchip,rk3188-mali
