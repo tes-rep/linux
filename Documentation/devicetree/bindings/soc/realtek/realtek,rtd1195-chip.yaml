@@ -19,7 +19,7 @@ properties:
 
   reg:
     minItems: 1
-    maxItems: 2
+    maxItems: 3
 
 required:
   - compatible
@@ -36,5 +36,12 @@ examples:
         compatible = "realtek,rtd1195-chip";
         reg = <0x9801a200 0x8>,
               <0x98007028 0x4>;
+    };
+  - |
+    chip-info@9801a200 {
+        compatible = "realtek,rtd1195-chip";
+        reg = <0x9801a200 0x8>,
+              <0x98007028 0x4>,
+              <0x980171d8 0x4>;
     };
 ...
