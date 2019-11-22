@@ -13,13 +13,13 @@
 
 / {
 	interrupt-parent = <&gic>;
-	#address-cells = <2>;
-	#size-cells = <2>;
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x0 0x0 0x98000000>;
+		ranges;
 
 		rpc_comm: rpc@2f000 {
 			reg = <0x2f000 0x1000>;
@@ -51,7 +51,7 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x98000000 0x0 0x98000000 0x68000000>;
+		ranges = <0x98000000 0x98000000 0x68000000>;
 
 		rbus: bus@98000000 {
 			compatible = "simple-bus";
