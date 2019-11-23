@@ -100,6 +100,15 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x18000000 0x70000>;
 
+			crt: syscon@0 {
+				compatible = "syscon", "simple-mfd";
+				reg = <0x0 0x1000>;
+				reg-io-width = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 0x1000>;
+			};
+
 			wdt: watchdog@7680 {
 				compatible = "realtek,rtd1295-watchdog";
 				reg = <0x7680 0x100>;
