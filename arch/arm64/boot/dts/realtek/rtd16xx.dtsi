@@ -5,6 +5,9 @@
  * Copyright (c) 2019 Realtek Semiconductor Corp.
  */
 
+/memreserve/	0x0000000000000000 0x000000000002e000;
+/memreserve/	0x000000000002e000 0x00000000000d2000;
+
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/interrupt-controller/irq.h>
 
@@ -12,6 +15,25 @@
 	interrupt-parent = <&gic>;
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		rpc_comm: rpc@2f000 {
+			reg = <0x2f000 0x1000>;
+		};
+
+		rpc_ringbuf: rpc@1ffe000 {
+			reg = <0x1ffe000 0x4000>;
+		};
+
+		tee: tee@10100000 {
+			reg = <0x10100000 0xf00000>;
+			no-map;
+		};
+	};
 
 	cpus {
 		#address-cells = <1>;
