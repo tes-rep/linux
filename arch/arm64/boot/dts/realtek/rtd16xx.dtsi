@@ -21,7 +21,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0x0>;
-			enable-method = "psci";
+			enable-method = "spin-table";
+			cpu-release-addr = <0x0 0x98007f30>;
 			next-level-cache = <&l2>;
 		};
 
@@ -29,7 +30,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0x100>;
-			enable-method = "psci";
+			enable-method = "spin-table";
+			cpu-release-addr = <0x0 0x98007f30>;
 			next-level-cache = <&l3>;
 		};
 
@@ -37,7 +39,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0x200>;
-			enable-method = "psci";
+			enable-method = "spin-table";
+			cpu-release-addr = <0x0 0x98007f30>;
 			next-level-cache = <&l3>;
 		};
 
@@ -45,7 +48,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0x300>;
-			enable-method = "psci";
+			enable-method = "spin-table";
+			cpu-release-addr = <0x0 0x98007f30>;
 			next-level-cache = <&l3>;
 		};
 
@@ -53,7 +57,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0x400>;
-			enable-method = "psci";
+			enable-method = "spin-table";
+			cpu-release-addr = <0x0 0x98007f30>;
 			next-level-cache = <&l3>;
 		};
 
@@ -61,7 +66,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0x500>;
-			enable-method = "psci";
+			enable-method = "spin-table";
+			cpu-release-addr = <0x0 0x98007f30>;
 			next-level-cache = <&l3>;
 		};
 
