@@ -61,28 +61,13 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x98000000 0x200000>;
 
-			reset1: reset-controller@0 {
-				compatible = "snps,dw-low-reset";
-				reg = <0x0 0x4>;
-				#reset-cells = <1>;
-			};
-
-			reset2: reset-controller@4 {
-				compatible = "snps,dw-low-reset";
-				reg = <0x4 0x4>;
-				#reset-cells = <1>;
-			};
-
-			reset3: reset-controller@8 {
-				compatible = "snps,dw-low-reset";
-				reg = <0x8 0x4>;
-				#reset-cells = <1>;
-			};
-
-			reset4: reset-controller@50 {
-				compatible = "snps,dw-low-reset";
-				reg = <0x50 0x4>;
-				#reset-cells = <1>;
+			crt: syscon@0 {
+				compatible = "syscon", "simple-mfd";
+				reg = <0x0 0x1000>;
+				reg-io-width = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 0x1000>;
 			};
 
 			iso_reset: reset-controller@7088 {
@@ -138,5 +123,31 @@
 			interrupt-controller;
 			#interrupt-cells = <3>;
 		};
+	};
+};
+
+&crt {
+	reset1: reset-controller@0 {
+		compatible = "snps,dw-low-reset";
+		reg = <0x0 0x4>;
+		#reset-cells = <1>;
+	};
+
+	reset2: reset-controller@4 {
+		compatible = "snps,dw-low-reset";
+		reg = <0x4 0x4>;
+		#reset-cells = <1>;
+	};
+
+	reset3: reset-controller@8 {
+		compatible = "snps,dw-low-reset";
+		reg = <0x8 0x4>;
+		#reset-cells = <1>;
+	};
+
+	reset4: reset-controller@50 {
+		compatible = "snps,dw-low-reset";
+		reg = <0x50 0x4>;
+		#reset-cells = <1>;
 	};
 };
