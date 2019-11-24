@@ -117,6 +117,15 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x98000000 0x200000>;
 
+			crt: syscon@0 {
+				compatible = "syscon", "simple-mfd";
+				reg = <0x0 0x1000>;
+				reg-io-width = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 0x1000>;
+			};
+
 			uart0: serial0@7800 {
 				compatible = "snps,dw-apb-uart";
 				reg = <0x7800 0x400>;
