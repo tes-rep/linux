@@ -107,7 +107,8 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x98000000 0x98000000 0x68000000>;
+		ranges = <0x00000000 0x00000000 0x0002e000>, /* boot ROM */
+			 <0x98000000 0x98000000 0x68000000>;
 
 		rbus: bus@98000000 {
 			compatible = "simple-bus";
