@@ -500,9 +500,9 @@ int cec_thread_func(void *_adap)
 			 * so much traffic on the bus that the adapter was
 			 * unable to transmit for CEC_XFER_TIMEOUT_MS (2.1s).
 			 */
-			pr_warn("cec-%s: message %*ph timed out\n", adap->name,
-				adap->transmitting->msg.len,
-				adap->transmitting->msg.msg);
+			//pr_warn("cec-%s: message %*ph timed out\n", adap->name,
+			//	adap->transmitting->msg.len,
+			//	adap->transmitting->msg.msg);
 			adap->transmit_in_progress = false;
 			adap->tx_timeouts++;
 			/* Just give up on this. */
