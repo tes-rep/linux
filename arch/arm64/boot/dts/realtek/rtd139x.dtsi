@@ -5,8 +5,8 @@
  * Copyright (c) 2019 Andreas Färber
  */
 
-/memreserve/	0x0000000000000000 0x0000000000030000;
-/memreserve/	0x0000000000030000 0x00000000000d0000;
+/memreserve/	0x0000000000000000 0x000000000002f000;
+/memreserve/	0x000000000002f000 0x00000000000d1000;
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/reset/realtek,rtd1295.h>
@@ -51,7 +51,8 @@
 		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x98000000 0x98000000 0x68000000>;
+		ranges = <0x00000000 0x00000000 0x0001f000>, /* boot ROM */
+			 <0x98000000 0x98000000 0x68000000>;
 
 		rbus: bus@98000000 {
 			compatible = "simple-bus";

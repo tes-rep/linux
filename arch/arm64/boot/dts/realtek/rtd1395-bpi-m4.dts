@@ -11,9 +11,9 @@
 	compatible = "bananapi,bpi-m4", "realtek,rtd1395";
 	model = "Banana Pi BPI-M4";
 
-	memory@0 {
+	memory@2f000 {
 		device_type = "memory";
-		reg = <0x0 0x40000000>; /* 1 GiB or 2 GiB */
+		reg = <0x2f000 0x3ffd1000>; /* boot ROM to 1 GiB or 2 GiB */
 	};
 
 	aliases {
