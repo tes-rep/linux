@@ -88,24 +88,13 @@
 				ranges = <0x0 0x1a000 0x1000>;
 			};
 
-			uart1: serial@1b200 {
-				compatible = "snps,dw-apb-uart";
-				reg = <0x1b200 0x100>;
-				reg-shift = <2>;
+			misc: syscon@1b000 {
+				compatible = "syscon", "simple-mfd";
+				reg = <0x1b000 0x1000>;
 				reg-io-width = <4>;
-				clock-frequency = <432000000>;
-				resets = <&reset2 RTD1295_RSTN_UR1>;
-				status = "disabled";
-			};
-
-			uart2: serial@1b400 {
-				compatible = "snps,dw-apb-uart";
-				reg = <0x1b400 0x100>;
-				reg-shift = <2>;
-				reg-io-width = <4>;
-				clock-frequency = <432000000>;
-				resets = <&reset2 RTD1295_RSTN_UR2>;
-				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x1b000 0x1000>;
 			};
 
 			scpu_wrapper: syscon@1d000 {
@@ -177,6 +166,28 @@
 		reg-io-width = <4>;
 		clock-frequency = <27000000>;
 		resets = <&iso_reset RTD1295_ISO_RSTN_UR0>;
+		status = "disabled";
+	};
+};
+
+&misc {
+	uart1: serial@200 {
+		compatible = "snps,dw-apb-uart";
+		reg = <0x200 0x100>;
+		reg-shift = <2>;
+		reg-io-width = <4>;
+		clock-frequency = <432000000>;
+		resets = <&reset2 RTD1295_RSTN_UR1>;
+		status = "disabled";
+	};
+
+	uart2: serial@400 {
+		compatible = "snps,dw-apb-uart";
+		reg = <0x400 0x100>;
+		reg-shift = <2>;
+		reg-io-width = <4>;
+		clock-frequency = <432000000>;
+		resets = <&reset2 RTD1295_RSTN_UR2>;
 		status = "disabled";
 	};
 };
