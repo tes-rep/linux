@@ -155,6 +155,35 @@
 		regulator-always-on;
 	};
 
+	sound {
+		compatible = "amlogic,gx-sound-card";
+		model = "GXM-KHADAS-VIM2";
+		audio-routing = "I2S ENCODER Playback", "I2S FIFO Playback";
+
+		assigned-clocks = <&clkc CLKID_MPLL2>,
+				  <&clkc CLKID_MPLL0>,
+				  <&clkc CLKID_MPLL1>;
+		assigned-clock-parents = <0>, <0>, <0>;
+		assigned-clock-rates = <294912000>,
+				       <270950400>,
+				       <393216000>;
+		status = "okay";
+
+		dai-link-0 {
+			sound-dai = <&i2s_fifo>;
+		};
+
+		dai-link-1 {
+			sound-dai = <&i2s_encoder>;
+			dai-format = "i2s";
+			mclk-fs = <256>;
+
+			codec-0 {
+				sound-dai = <&hdmi_tx>;
+			};
+		};
+	};
+
 	vcc_3v3: regulator-vcc_3v3 {
 		compatible = "regulator-fixed";
 		regulator-name = "VCC_3V3";
@@ -189,6 +218,10 @@
 		clock-frequency = <32768>;
 		pwms = <&pwm_ef 0 30518 0>; /* PWM_E at 32.768KHz */
 	};
+};
+
+&aiu {
+        status = "okay";
 };
 
 &cec_AO {
@@ -293,6 +326,14 @@
 		clock-frequency = <32768>;
 		clock-output-names = "xin32k";
 	};
+};
+
+&i2s_fifo {
+	status = "okay";
+};
+
+&i2s_encoder {
+	status = "okay";
 };
 
 &ir {
