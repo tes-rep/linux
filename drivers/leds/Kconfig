@@ -836,6 +836,17 @@ config LEDS_LM36274
 	  Say Y to enable the LM36274 LED driver for TI LMU devices.
 	  This supports the LED device LM36274.
 
+config LEDS_TM1628
+	tristate "LED driver for TM1628"
+	depends on LEDS_CLASS
+	depends on SPI
+	depends on OF || COMPILE_TEST
+	help
+	  Say Y to enable support for Titan Micro Electronics TM1628
+	  LED controllers.
+	  They are 3-wire SPI devices controlling a two-dimensional grid of
+	  LEDs. Dimming is applied to all outputs through an internal PWM.
+
 comment "LED Triggers"
 source "drivers/leds/trigger/Kconfig"
 
