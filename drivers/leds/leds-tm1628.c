@@ -699,6 +699,8 @@ static const struct tm1628_info aip1618_info = {
 	.seg_mask = GENMASK(14, 12) | GENMASK(5, 1),
 	.modes = aip1618_modes,
 	.default_mode = 3,
+	.k_mask = BIT(2),
+	.ks_mask = GENMASK(5, 1),
 	.pwm_map = tm1628_pwm_map,
 	.default_pwm = 0,
 };
