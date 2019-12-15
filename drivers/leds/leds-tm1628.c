@@ -43,6 +43,8 @@ struct tm1628_info {
 	u16				seg_mask;
 	const struct tm1628_mode	*modes;
 	int				default_mode;
+	u8				k_mask;
+	u16				ks_mask;
 	const struct pwm_capture	*pwm_map;
 	int				default_pwm;
 };
@@ -656,6 +658,8 @@ static const struct tm1628_info tm1628_info = {
 	.seg_mask = GENMASK(14, 12) | GENMASK(10, 1),
 	.modes = tm1628_modes,
 	.default_mode = 3,
+	.k_mask = GENMASK(2, 1),
+	.ks_mask = GENMASK(10, 1),
 	.pwm_map = tm1628_pwm_map,
 	.default_pwm = 0,
 };
