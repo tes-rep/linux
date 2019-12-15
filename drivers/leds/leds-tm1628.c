@@ -347,6 +347,28 @@ static u8 tm1628_get_char_ssd_map(char ch)
 	return 0x0;
 }
 
+struct tm1628_ssd_glyph {
+	char *str;
+	u8 segs;
+};
+
+static const struct tm1628_ssd_glyph tm1628_glyph_ssd_map[] = {
+	{ "ll", SSD_TOP_LEFT | SSD_BOTTOM_LEFT |
+		SSD_TOP_RIGHT | SSD_BOTTOM_RIGHT },
+};
+
+static u8 tm1628_get_glyph_ssd_map(const char *str)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(tm1628_glyph_ssd_map); i++) {
+		if (!strncmp(tm1628_glyph_ssd_map[i].str, str, 2))
+			return tm1628_glyph_ssd_map[i].segs;
+	}
+
+	return 0x0;
+}
+
 static int tm1628_display_apply_map(struct tm1628 *s,
 	struct tm1628_display *display, u8 map)
 {
@@ -366,7 +388,7 @@ static ssize_t text_store(struct device *dev,
 {
 	struct tm1628 *s = dev_get_drvdata(dev);
 	size_t offset, len = count;
-	u8 map;
+	u8 map, glyph_map;
 	int i, ret;
 
 	if (len > 0 && buf[len - 1] == '\n')
@@ -375,6 +397,13 @@ static ssize_t text_store(struct device *dev,
 	for (i = 0, offset = 0; i < s->num_displays; i++) {
 		if (offset < len) {
 			map = tm1628_get_char_ssd_map(buf[offset]);
+			if (offset + 1 < len && len > s->num_displays) {
+				glyph_map = tm1628_get_glyph_ssd_map(buf + offset);
+				if (glyph_map) {
+					map = glyph_map;
+					offset++;
+				}
+			}
 			offset++;
 		} else
 			map = 0x0;
