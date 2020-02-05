@@ -576,15 +576,15 @@ vp9_loop_filter_init(struct amvdec_core *core, struct codec_vp9 *vp9)
 		amvdec_write_dos(core, HEVC_DBLK_CFG9, thr);
 	}
 
-	if (core->platform->revision >= VDEC_REVISION_G12A)
-		/* VP9 video format */
-		amvdec_write_dos(core, HEVC_DBLK_CFGB, (0x54 << 8) | BIT(0));
-	else if (core->platform->revision >= VDEC_REVISION_SM1)
+	if (core->platform->revision >= VDEC_REVISION_SM1)
 		amvdec_write_dos(core, HEVC_DBLK_CFGB,
 				 (0x3 << 14) | /* dw fifo thres r and b */
 				 (0x3 << 12) | /* dw fifo thres r or b */
 				 (0x3 << 10) | /* dw fifo thres not r/b */
 				 BIT(0)); /* VP9 video format */
+	else if (core->platform->revision >= VDEC_REVISION_G12A)
+		/* VP9 video format */
+		amvdec_write_dos(core, HEVC_DBLK_CFGB, (0x54 << 8) | BIT(0));
 	else
 		amvdec_write_dos(core, HEVC_DBLK_CFGB, 0x40400001);
 }
