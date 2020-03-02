@@ -21,7 +21,9 @@ static int panfrost_reset_init(struct panfrost_device *pfdev)
 
 	pfdev->rstc = devm_reset_control_array_get(pfdev->dev, false, true);
 	if (IS_ERR(pfdev->rstc)) {
-		dev_err(pfdev->dev, "get reset failed %ld\n", PTR_ERR(pfdev->rstc));
+		if (PTR_ERR(pfdev->rstc) != -EPROBE_DEFER)
+			dev_err(pfdev->dev, "get reset failed %ld\n",
+				PTR_ERR(pfdev->rstc));
 		return PTR_ERR(pfdev->rstc);
 	}
 
@@ -44,7 +46,9 @@ static int panfrost_clk_init(struct panfrost_device *pfdev)
 
 	pfdev->clock = devm_clk_get(pfdev->dev, NULL);
 	if (IS_ERR(pfdev->clock)) {
-		dev_err(pfdev->dev, "get clock failed %ld\n", PTR_ERR(pfdev->clock));
+		if (PTR_ERR(pfdev->clock) != -EPROBE_DEFER)
+			dev_err(pfdev->dev, "get clock failed %ld\n",
+				PTR_ERR(pfdev->clock));
 		return PTR_ERR(pfdev->clock);
 	}
 
@@ -57,8 +61,9 @@ static int panfrost_clk_init(struct panfrost_device *pfdev)
 
 	pfdev->bus_clock = devm_clk_get_optional(pfdev->dev, "bus");
 	if (IS_ERR(pfdev->bus_clock)) {
-		dev_err(pfdev->dev, "get bus_clock failed %ld\n",
-			PTR_ERR(pfdev->bus_clock));
+		if (PTR_ERR(pfdev->bus_clock) != -EPROBE_DEFER)
+			dev_err(pfdev->dev, "get bus_clock failed %ld\n",
+				PTR_ERR(pfdev->bus_clock));
 		return PTR_ERR(pfdev->bus_clock);
 	}
 
@@ -92,7 +97,9 @@ static int panfrost_regulator_init(struct panfrost_device *pfdev)
 	pfdev->regulator = devm_regulator_get(pfdev->dev, "mali");
 	if (IS_ERR(pfdev->regulator)) {
 		ret = PTR_ERR(pfdev->regulator);
-		dev_err(pfdev->dev, "failed to get regulator: %d\n", ret);
+		if (ret != -EPROBE_DEFER)
+			dev_err(pfdev->dev, "failed to get regulator: %d\n",
+				ret);
 		return ret;
 	}
 
@@ -124,19 +131,22 @@ int panfrost_device_init(struct panfrost_device *pfdev)
 
 	err = panfrost_clk_init(pfdev);
 	if (err) {
-		dev_err(pfdev->dev, "clk init failed %d\n", err);
+		if (err != -EPROBE_DEFER)
+			dev_err(pfdev->dev, "clk init failed %d\n", err);
 		return err;
 	}
 
 	err = panfrost_regulator_init(pfdev);
 	if (err) {
-		dev_err(pfdev->dev, "regulator init failed %d\n", err);
+		if (err != -EPROBE_DEFER)
+			dev_err(pfdev->dev, "regulator init failed %d\n", err);
 		goto err_out0;
 	}
 
 	err = panfrost_reset_init(pfdev);
 	if (err) {
-		dev_err(pfdev->dev, "reset init failed %d\n", err);
+		if (err != -EPROBE_DEFER)
+			dev_err(pfdev->dev, "reset init failed %d\n", err);
 		goto err_out1;
 	}
 
