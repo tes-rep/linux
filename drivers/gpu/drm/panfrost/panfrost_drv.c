@@ -656,6 +656,7 @@ static int panfrost_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id dt_match[] = {
+	{ .compatible = "arm,mali-bifrost" },
 	{ .compatible = "arm,mali-t604" },
 	{ .compatible = "arm,mali-t624" },
 	{ .compatible = "arm,mali-t628" },
