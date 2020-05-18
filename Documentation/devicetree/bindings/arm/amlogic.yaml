@@ -165,6 +165,7 @@ properties:
               - seirobotics,sei610
               - khadas,vim3l
               - hardkernel,odroid-c4
+              - amediatech,x96-air
           - const: amlogic,sm1
 
       - description: Boards with the Amlogic Meson A1 A113L SoC
