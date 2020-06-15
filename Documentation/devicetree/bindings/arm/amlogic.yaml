@@ -167,6 +167,7 @@ properties:
               - seirobotics,sei610
               - khadas,vim3l
               - hardkernel,odroid-c4
+              - sunvell,t95-max
               - amediatech,x96-air
           - const: amlogic,sm1
 
