@@ -759,6 +759,9 @@ static int meson_uart_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
+	/* Init the spinlock early in case this is the console */
+	spin_lock_init(&port->lock);
+
 	port->iotype = UPIO_MEM;
 	port->mapbase = res_mem->start;
 	port->mapsize = resource_size(res_mem);
