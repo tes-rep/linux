@@ -101,8 +101,7 @@
 #define   IRQ_RESP_STATUS BIT(14)
 #define   IRQ_SDIO BIT(15)
 #define   IRQ_EN_MASK \
-	(IRQ_CRC_ERR | IRQ_TIMEOUTS | IRQ_END_OF_CHAIN | IRQ_RESP_STATUS |\
-	 IRQ_SDIO)
+	(IRQ_CRC_ERR | IRQ_TIMEOUTS | IRQ_END_OF_CHAIN)
 
 #define SD_EMMC_CMD_CFG 0x50
 #define SD_EMMC_CMD_ARG 0x54
@@ -146,6 +145,7 @@ struct sd_emmc_desc {
 };
 
 struct meson_host {
+	spinlock_t		lock;
 	struct	device		*dev;
 	struct	meson_mmc_data *data;
 	struct	mmc_host	*mmc;
@@ -170,6 +170,7 @@ struct meson_host {
 	dma_addr_t descs_dma_addr;
 
 	int irq;
+	u32 irq_en;
 
 	bool vqmmc_enabled;
 };
@@ -842,22 +843,24 @@ static irqreturn_t meson_mmc_irq(int irq, void *dev_id)
 	struct meson_host *host = dev_id;
 	struct mmc_command *cmd;
 	struct mmc_data *data;
-	u32 irq_en, status, raw_status;
+	u32  status, raw_status;
 	irqreturn_t ret = IRQ_NONE;
 
-	irq_en = readl(host->regs + SD_EMMC_IRQ_EN);
+	/* Disable irqs */
+	writel(0, host->regs + SD_EMMC_IRQ_EN);
+
 	raw_status = readl(host->regs + SD_EMMC_STATUS);
-	status = raw_status & irq_en;
+	status = raw_status & host->irq_en;
 
 	if (!status) {
 		dev_dbg(host->dev,
 			"Unexpected IRQ! irq_en 0x%08x - status 0x%08x\n",
-			 irq_en, raw_status);
-		return IRQ_NONE;
+			 host->irq_en, raw_status);
+		goto none;
 	}
 
 	if (WARN_ON(!host) || WARN_ON(!host->cmd))
-		return IRQ_NONE;
+		goto none;
 
 	/* ack all raised interrupts */
 	writel(status, host->regs + SD_EMMC_STATUS);
@@ -908,6 +911,11 @@ out:
 	if (ret == IRQ_HANDLED)
 		meson_mmc_request_done(host->mmc, cmd->mrq);
 
+none:
+	/* Enable the irq again if the thread will not run */
+	if (ret != IRQ_WAKE_THREAD)
+		writel(host->irq_en, host->regs + SD_EMMC_IRQ_EN);
+
 	return ret;
 }
 
@@ -934,15 +942,17 @@ static irqreturn_t meson_mmc_irq_thread(int irq, void *dev_id)
 	struct mmc_command *next_cmd, *cmd = host->cmd;
 	struct mmc_data *data;
 	unsigned int xfer_bytes;
+	int ret = IRQ_HANDLED;
 
-	if (WARN_ON(!cmd))
-		return IRQ_NONE;
+	if (WARN_ON(!cmd)) {
+		ret = IRQ_NONE;
+		goto out;
+	}
 
 	if (cmd->error) {
 		meson_mmc_wait_desc_stop(host);
 		meson_mmc_request_done(host->mmc, cmd->mrq);
-
-		return IRQ_HANDLED;
+		goto out;
 	}
 
 	data = cmd->data;
@@ -959,7 +969,10 @@ static irqreturn_t meson_mmc_irq_thread(int irq, void *dev_id)
 	else
 		meson_mmc_request_done(host->mmc, cmd->mrq);
 
-	return IRQ_HANDLED;
+out:
+	/* Re-enable the irqs */
+	writel(host->irq_en, host->regs + SD_EMMC_IRQ_EN);
+	return ret;
 }
 
 /*
@@ -1051,6 +1064,7 @@ static int meson_mmc_probe(struct platform_device *pdev)
 	host->mmc = mmc;
 	host->dev = &pdev->dev;
 	dev_set_drvdata(&pdev->dev, host);
+	spin_lock_init(&host->lock);
 
 	/* The G12A SDIO Controller needs an SRAM bounce buffer */
 	host->dram_access_quirk = device_property_read_bool(&pdev->dev,
@@ -1133,13 +1147,12 @@ static int meson_mmc_probe(struct platform_device *pdev)
 
 	/* clear, ack and enable interrupts */
 	writel(0, host->regs + SD_EMMC_IRQ_EN);
-	writel(IRQ_CRC_ERR | IRQ_TIMEOUTS | IRQ_END_OF_CHAIN,
-	       host->regs + SD_EMMC_STATUS);
-	writel(IRQ_CRC_ERR | IRQ_TIMEOUTS | IRQ_END_OF_CHAIN,
-	       host->regs + SD_EMMC_IRQ_EN);
+	host->irq_en = IRQ_EN_MASK;
+	writel(host->irq_en, host->regs + SD_EMMC_STATUS);
+	writel(host->irq_en, host->regs + SD_EMMC_IRQ_EN);
 
 	ret = request_threaded_irq(host->irq, meson_mmc_irq,
-				   meson_mmc_irq_thread, IRQF_ONESHOT,
+				   meson_mmc_irq_thread, 0,
 				   dev_name(&pdev->dev), host);
 	if (ret)
 		goto err_init_clk;
