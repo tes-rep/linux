@@ -54,7 +54,6 @@
 
 		gpio = <&gpio_ao GPIOAO_3 GPIO_ACTIVE_HIGH>;
 		enable-active-high;
-		regulator-always-on;
 	};
 
 	tf_io: gpio-regulator-tf_io {
@@ -64,6 +63,8 @@
 		regulator-min-microvolt = <1800000>;
 		regulator-max-microvolt = <3300000>;
 
+		enable-gpios = <&gpio GPIOE_2 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
 		gpios = <&gpio_ao GPIOAO_6 GPIO_ACTIVE_HIGH>;
 		gpios-states = <0>;
 
