@@ -13,6 +13,8 @@
 	aliases {
 		serial0 = &uart_AO;
 		ethernet0 = &ethmac;
+		rtc0 = &rtc0;
+		rtc1 = &vrtc;
 	};
 
 	dioo2133: audio-amplifier-0 {
@@ -341,6 +343,17 @@
 	status = "okay";
 };
 
+&ao_pinctrl {
+	rtc_int_pins: rtc-int {
+		mux {
+			groups = "GPIOAO_7";
+			function = "gpio_aobus";
+			bias-disable;
+			output-disable;
+		};
+	};
+};
+
 &arb {
 	status = "okay";
 };
@@ -475,6 +488,22 @@
 	pinctrl-0 = <&remote_input_ao_pins>;
 	pinctrl-names = "default";
 	linux,rc-map-name = "rc-odroid";
+};
+
+&i2c3 {
+	status = "okay";
+	pinctrl-0 = <&i2c3_sda_a_pins>, <&i2c3_sck_a_pins>;
+	pinctrl-names = "default";
+
+	rtc0: @51 {
+		pinctrl-0 = <&rtc_int_pins>;
+		pinctrl-names = "default";
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		interrupts = <GPIOAO_7 IRQ_TYPE_LEVEL_LOW>;
+		interrupt-parent = <&gpio_intc>;
+		wakeup-source;
+	};
 };
 
 &pwm_ab {
