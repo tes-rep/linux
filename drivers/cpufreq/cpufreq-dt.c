@@ -312,8 +312,7 @@ static int dt_cpufreq_early_init(struct device *dev, int cpu)
 	return 0;
 
 put_reg:
-	if (priv->reg_opp_table)
-		dev_pm_opp_put_regulators(priv->reg_opp_table);
+	dev_pm_opp_put_regulators(priv->opp_table);
 put_table:
 	dev_pm_opp_put_opp_table(priv->opp_table);
 free_cpumask:
@@ -326,8 +325,7 @@ static void dt_cpufreq_release(void)
 	struct private_data *priv, *tmp;
 
 	list_for_each_entry_safe(priv, tmp, &priv_list, node) {
-		if (priv->reg_opp_table)
-			dev_pm_opp_put_regulators(priv->reg_opp_table);
+		dev_pm_opp_put_regulators(priv->opp_table);
 		dev_pm_opp_put_opp_table(priv->opp_table);
 		free_cpumask_var(priv->cpus);
 		list_del(&priv->node);
