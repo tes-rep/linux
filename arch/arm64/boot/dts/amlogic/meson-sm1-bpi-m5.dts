@@ -1,0 +1,54 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2020 Dongjin Kim <tobetter@gmail.com>
+ * Copyright (c) 2020 
+ */
+
+/dts-v1/;
+
+#include "meson-sm1-odroid.dtsi"
+
+/ {
+	compatible = "sinovoip,bpi-m5", "amlogic,sm1";
+	model = "Bananapi BPI-M5";
+
+	hub_5v: regulator-hub_5v {
+		/* Connected to the Hub CHIPENABLE, LOW sets low power state */
+		gpio = <&gpio GPIOH_4 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue {
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio_ao GPIOAO_11 GPIO_ACTIVE_LOW>;
+			default-state = "off";
+		};
+
+		green {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			gpios = <&gpio_ao GPIOAO_2 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "heartbeat";
+			panic-indicator;
+		};
+	};
+};
+
+&gpio {
+        /*
+         * WARNING: The USB Hub on the BPI-M5 needs a reset signal
+         * to be turned high in order to be detected by the USB Controller
+         * This signal should be handled by a USB specific power sequence
+         * in order to reset the Hub when USB bus is powered down.
+         */
+        usb-hub {
+                gpio-hog;
+                gpios = <GPIOH_4 GPIO_ACTIVE_HIGH>;
+                output-high;
+                line-name = "usb-hub-reset";
+        };
+};
