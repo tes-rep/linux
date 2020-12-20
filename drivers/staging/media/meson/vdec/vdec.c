@@ -285,6 +285,9 @@ static int vdec_start_streaming(struct vb2_queue *q, unsigned int count)
 	struct vb2_v4l2_buffer *buf;
 	int ret;
 
+	dev_err(sess->core->dev, "%s: q->type=%d, status=%d, out=%d, cap=%d\n", __func__,
+		q->type, sess->status, sess->streamon_out, sess->streamon_cap);
+
 	if (core->cur_sess && core->cur_sess != sess) {
 		ret = -EBUSY;
 		goto bufs_done;
@@ -398,6 +401,8 @@ static void vdec_stop_streaming(struct vb2_queue *q)
 	struct amvdec_codec_ops *codec_ops = sess->fmt_out->codec_ops;
 	struct amvdec_core *core = sess->core;
 	struct vb2_v4l2_buffer *buf;
+
+	dev_err(sess->core->dev, "%s: q->type=%d\n", __func__, q->type);
 
 	if (sess->status == STATUS_RUNNING ||
 	    sess->status == STATUS_INIT ||
@@ -720,16 +725,24 @@ vdec_decoder_cmd(struct file *file, void *fh, struct v4l2_decoder_cmd *cmd)
 	struct device *dev = sess->core->dev;
 	int ret;
 
+	dev_err(dev, "%s: stream out=%d, stream cap=%d, cmd=%d\n", __func__, sess->streamon_out, sess->streamon_cap, cmd->cmd);
+
 	ret = v4l2_m2m_ioctl_try_decoder_cmd(file, fh, cmd);
 	if (ret)
 		return ret;
 
-	if (!(sess->streamon_out & sess->streamon_cap))
+	if (!(sess->streamon_out && sess->streamon_cap))
 		return 0;
 
 	if (cmd->cmd == V4L2_DEC_CMD_START) {
+		struct vb2_queue *dst_vq;
+		dst_vq = v4l2_m2m_get_vq(sess->fh.m2m_ctx, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE);
+
 		v4l2_m2m_clear_state(sess->m2m_ctx);
+		vb2_clear_last_buffer_dequeued(dst_vq);
 		sess->should_stop = 0;
+
+		dev_err(dev, "Start seen!\n");
 		return 0;
 	}
 
