@@ -95,7 +95,7 @@ static int vp9_update_header(struct amvdec_core *core, struct vb2_buffer *buf)
 	dsize = vb2_get_plane_payload(buf, 0);
 
 	if (dsize == vb2_plane_size(buf, 0)) {
-		dev_warn(core->dev, "%s: unable to update header\n", __func__);
+		dev_info(core->dev, "%s: unable to update header\n", __func__);
 		return 0;
 	}
 
@@ -134,7 +134,7 @@ static int vp9_update_header(struct amvdec_core *core, struct vb2_buffer *buf)
 	new_frame_size = total_datasize + num_frames * VP9_HEADER_SIZE;
 
 	if (new_frame_size >= vb2_plane_size(buf, 0)) {
-		dev_warn(core->dev, "%s: unable to update header\n", __func__);
+		dev_info(core->dev, "%s: unable to update header\n", __func__);
 		return 0;
 	}
 
@@ -168,7 +168,7 @@ static int vp9_update_header(struct amvdec_core *core, struct vb2_buffer *buf)
 		if (!old_header) {
 			/* nothing */
 		} else if (old_header > fdata + 16 + framesize) {
-			dev_dbg(core->dev, "%s: data has gaps, setting to 0\n",
+			dev_info(core->dev, "%s: data has gaps, setting to 0\n",
 				__func__);
 			memset(fdata + 16 + framesize, 0,
 			       (old_header - fdata + 16 + framesize));
@@ -200,7 +200,7 @@ static u32 esparser_pad_start_code(struct amvdec_core *core,
 
 	if ((payload_size + pad_size + SEARCH_PATTERN_LEN) >
 						vb2_plane_size(vb, 0)) {
-		dev_warn(core->dev, "%s: unable to pad start code\n", __func__);
+		dev_info(core->dev, "%s: unable to pad start code\n", __func__);
 		return pad_size;
 	}
 
@@ -244,7 +244,7 @@ static u32 esparser_vififo_get_free_space(struct amvdec_session *sess)
 	vififo_usage += (6 * SZ_1K); // 6 KiB internal fifo
 
 	if (vififo_usage > sess->vififo_size) {
-		dev_warn(sess->core->dev,
+		dev_info(sess->core->dev,
 			 "VIFIFO usage (%u) > VIFIFO size (%u)\n",
 			 vififo_usage, sess->vififo_size);
 		return 0;
@@ -329,7 +329,7 @@ esparser_queue(struct amvdec_session *sess, struct vb2_v4l2_buffer *vbuf)
 	offset = esparser_get_offset(sess);
 
 	amvdec_add_ts(sess, vb->timestamp, vbuf->timecode, offset, vbuf->flags);
-	dev_dbg(core->dev, "esparser: ts = %llu pld_size = %u offset = %08X flags = %08X\n",
+	dev_info(core->dev, "esparser: ts = %llu pld_size = %u offset = %08X flags = %08X\n",
 		vb->timestamp, payload_size, offset, vbuf->flags);
 
 	vbuf->flags = 0;
@@ -352,7 +352,7 @@ esparser_queue(struct amvdec_session *sess, struct vb2_v4l2_buffer *vbuf)
 	ret = esparser_write_data(core, phy, payload_size + pad_size);
 
 	if (ret <= 0) {
-		dev_warn(core->dev, "esparser: input parsing error\n");
+		dev_info(core->dev, "esparser: input parsing error\n");
 		amvdec_remove_ts(sess, vb->timestamp);
 		v4l2_m2m_buf_done(vbuf, VB2_BUF_STATE_ERROR);
 		amvdec_write_parser(core, PARSER_FETCH_CMD, 0);
