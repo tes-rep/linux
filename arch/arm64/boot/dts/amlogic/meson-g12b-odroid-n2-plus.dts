@@ -13,6 +13,23 @@
 / {
 	compatible = "hardkernel,odroid-n2-plus", "amlogic,s922x", "amlogic,g12b";
 	model = "Hardkernel ODROID-N2Plus";
+
+	aliases {
+		rtc0 = &rtc;
+		rtc1 = &vrtc;
+	};
+};
+
+&i2c3 {
+	status = "okay";
+	pinctrl-0 = <&i2c3_sda_a_pins>, <&i2c3_sck_a_pins>;
+	pinctrl-names = "default";
+
+	rtc: rtc@51 {
+		compatible = "haoyu,hym8563";
+		reg = <0x51>;
+		wakeup-source;
+	};
 };
 
 &vddcpu_a {
