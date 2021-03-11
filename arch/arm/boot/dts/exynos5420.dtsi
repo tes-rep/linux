@@ -19,6 +19,9 @@
 	compatible = "samsung,exynos5420", "samsung,exynos5";
 
 	aliases {
+		mmc0 = &mmc_0;
+		mmc1 = &mmc_1;
+		mmc2 = &mmc_2;
 		mshc0 = &mmc_0;
 		mshc1 = &mmc_1;
 		mshc2 = &mmc_2;

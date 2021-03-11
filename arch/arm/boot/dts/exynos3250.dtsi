@@ -28,6 +28,9 @@
 	aliases {
 		pinctrl0 = &pinctrl_0;
 		pinctrl1 = &pinctrl_1;
+		mmc0 = &mshc_0;
+		mmc1 = &mshc_1;
+		mmc2 = &mshc_2;
 		mshc0 = &mshc_0;
 		mshc1 = &mshc_1;
 		mshc2 = &mshc_2;

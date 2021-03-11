@@ -28,6 +28,7 @@
 		pinctrl3 = &pinctrl_3;
 		fimc-lite0 = &fimc_lite_0;
 		fimc-lite1 = &fimc_lite_1;
+		mmc0 = &mshc_0;
 		mshc0 = &mshc_0;
 	};
 
