@@ -45,6 +45,8 @@
 		fimc1 = &fimc_1;
 		fimc2 = &fimc_2;
 		fimc3 = &fimc_3;
+		mmc1 = &sdhci_1;
+		mmc2 = &sdhci_2;
 		serial0 = &serial_0;
 		serial1 = &serial_1;
 		serial2 = &serial_2;

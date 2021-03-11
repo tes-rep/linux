@@ -23,6 +23,7 @@
 	compatible = "samsung,exynos4210", "samsung,exynos4";
 
 	aliases {
+		mmc0 = &sdhci_0;
 		pinctrl0 = &pinctrl_0;
 		pinctrl1 = &pinctrl_1;
 		pinctrl2 = &pinctrl_2;
