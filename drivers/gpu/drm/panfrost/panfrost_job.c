@@ -136,8 +136,6 @@ static void panfrost_job_write_affinity(struct panfrost_device *pfdev,
 	 * multiple (2) coherent core groups
 	 */
 	affinity = pfdev->features.shader_present;
-	if (panfrost_model_eq(pfdev, 0x620) && js == 1)
-		affinity &= 0xf;
 
 	job_write(pfdev, JS_AFFINITY_NEXT_LO(js), affinity & 0xFFFFFFFF);
 	job_write(pfdev, JS_AFFINITY_NEXT_HI(js), affinity >> 32);
@@ -236,7 +234,7 @@ static void panfrost_job_hw_submit(struct panfrost_job *job, int js)
 	if (!atomic_read(&pfdev->reset.pending)) {
 		job_write(pfdev, JS_COMMAND_NEXT(js), JS_COMMAND_START);
 		dev_dbg(pfdev->dev,
-			"JS: Submitting atom %px to js[%d][%d] with head=0x%llx AS %d",
+			"JS: Submitting atom %p to js[%d][%d] with head=0x%llx AS %d",
 			job, js, subslot, jc_head, cfg & 0xf);
 	}
 	spin_unlock(&pfdev->js->job_lock);
@@ -742,7 +740,7 @@ static enum drm_gpu_sched_stat panfrost_job_timedout(struct drm_sched_job
 	if (dma_fence_is_signaled(job->done_fence))
 		return DRM_GPU_SCHED_STAT_NOMINAL;
 
-	dev_err(pfdev->dev, "gpu sched timeout, js=%d, config=0x%x, status=0x%x, head=0x%x, tail=0x%x, sched_job=%px",
+	dev_err(pfdev->dev, "gpu sched timeout, js=%d, config=0x%x, status=0x%x, head=0x%x, tail=0x%x, sched_job=%p",
 		js,
 		job_read(pfdev, JS_CONFIG(js)),
 		job_read(pfdev, JS_STATUS(js)),
