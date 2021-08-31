@@ -34,7 +34,7 @@ static int wait_ready(struct panfrost_device *pfdev, u32 as_nr)
 	/* Wait for the MMU status to indicate there is no active command, in
 	 * case one is pending. */
 	ret = readl_relaxed_poll_timeout_atomic(pfdev->iomem + AS_STATUS(as_nr),
-		val, !(val & AS_STATUS_AS_ACTIVE), 10, 100000);
+		val, !(val & AS_STATUS_AS_ACTIVE), 3, 100000);
 
 	if (ret) {
 		/* The GPU hung, let's trigger a reset */
@@ -63,11 +63,21 @@ static void lock_region(struct panfrost_device *pfdev, u32 as_nr,
 	u8 region_width;
 	u64 region = iova & PAGE_MASK;
 
-	/* The size is encoded as ceil(log2) minus(1), which may be calculated
-	 * with fls. The size must be clamped to hardware bounds.
-	 */
-	size = max_t(u64, size, AS_LOCK_REGION_MIN_SIZE);
-	region_width = fls64(size - 1) - 1;
+	if (size & ~PAGE_MASK)
+		size = (size >> PAGE_SHIFT) + 1;
+	else
+		size = size >> PAGE_SHIFT;
+	region_width = 10;
+	if (size > 0x80000000) {
+		if (size & 0xffffffff)
+			size = (size >> 32) + 1;
+		else
+			size = size >> 32;
+		region_width += 32;
+	}
+	region_width += fls(size);
+	if (size != (1ul << ((region_width - 11) & 0x1f)))
+		region_width++;
 	region |= region_width;
 
 	/* Lock the region that needs to be updated */
@@ -112,7 +122,7 @@ static void panfrost_mmu_enable(struct panfrost_device *pfdev, struct panfrost_m
 	u64 transtab = cfg->arm_mali_lpae_cfg.transtab;
 	u64 memattr = cfg->arm_mali_lpae_cfg.memattr;
 
-	mmu_hw_do_operation_locked(pfdev, as_nr, 0, ~0ULL, AS_COMMAND_FLUSH_MEM);
+	mmu_hw_do_operation_locked(pfdev, as_nr, 0, 1ULL << 48, AS_COMMAND_FLUSH_MEM);
 
 	mmu_write(pfdev, AS_TRANSTAB_LO(as_nr), transtab & 0xffffffffUL);
 	mmu_write(pfdev, AS_TRANSTAB_HI(as_nr), transtab >> 32);
