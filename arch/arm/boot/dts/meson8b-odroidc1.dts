@@ -107,7 +107,7 @@
 
 	sound {
 		compatible = "amlogic,gx-sound-card";
-		model = "M8B-ODROID-C1";
+		model = "ODROID-C1";
 
 		assigned-clocks = <&clkc CLKID_MPLL0>,
 				  <&clkc CLKID_MPLL1>;
