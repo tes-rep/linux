@@ -8,7 +8,9 @@
 #include "meson8m2.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/gpio/meson8-gpio.h>
 #include <dt-bindings/input/input.h>
+#include <dt-bindings/sound/meson-aiu.h>
 
 / {
 	model = "WeTek Core";
@@ -147,6 +149,10 @@
 		};
 
 		dai-link-1 {
+			sound-dai = <&aiu AIU_CPU CPU_SPDIF_FIFO>;
+		};
+
+		dai-link-2 {
 			sound-dai = <&aiu AIU_CPU CPU_I2S_ENCODER>;
 			dai-format = "i2s";
 			mclk-fs = <256>;
@@ -156,13 +162,31 @@
 			};
 		};
 
-		dai-link-2 {
+		dai-link-3 {
 			sound-dai = <&aiu AIU_HDMI CTRL_OUT>;
 
 			codec-0 {
 				sound-dai = <&hdmi_tx 0>;
 			};
 		};
+
+		dai-link-4 {
+			sound-dai = <&aiu AIU_CPU CPU_SPDIF_ENCODER>;
+
+			codec-0 {
+				sound-dai = <&hdmi_tx 1>;
+			};
+
+			codec-1 {
+				sound-dai = <&spdif_dit>;
+			};
+                };
+	};
+
+	spdif_dit: spdif-audio-codec {
+		#sound-dai-cells = <0>;
+		compatible = "linux,spdif-dit";
+		sound-name-prefix = "DIT";
 	};
 
 	vcc_1v8: regulator-vcc-1v8 {
@@ -272,6 +296,11 @@
 
 &aiu {
 	status = "okay";
+
+	pinctrl-0 = <&i2s_am_clk_pins>, <&i2s_out_ao_clk_pins>,
+		    <&i2s_out_lr_clk_pins>, <&i2s_out_ch01_ao_pins>,
+		    <&spdif_out_pins>;
+	pinctrl-names = "default";
 };
 
 &cpu0 {
