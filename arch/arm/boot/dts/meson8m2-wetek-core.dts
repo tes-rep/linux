@@ -52,6 +52,16 @@
 		vin-supply = <&dc_12v>;
 	};
 
+	cvbs-connector {
+		compatible = "composite-video-connector";
+
+		port {
+			cvbs_connector_in: endpoint {
+				remote-endpoint = <&cvbs_vdac_out>;
+			};
+		};
+	};
+
 	dc_12v: regulator-dc-12v {
 		compatible = "regulator-fixed";
 		regulator-name = "DC_12V";
@@ -330,6 +340,12 @@
 	};
 	opp-1992000000 {
 		opp-microvolt = <1140000>;
+	};
+};
+
+&cvbs_vdac_port {
+	cvbs_vdac_out: endpoint {
+		remote-endpoint = <&cvbs_connector_in>;
 	};
 };
 
