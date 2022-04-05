@@ -41,7 +41,7 @@
 #define   CLK_V2_TX_DELAY_MASK GENMASK(19, 16)
 #define   CLK_V2_RX_DELAY_MASK GENMASK(23, 20)
 #define   CLK_V2_ALWAYS_ON BIT(24)
-#define   CLK_V2_IRQ_SDIO_SLEEP BIT(25)
+#define   CLK_V2_IRQ_SDIO_SLEEP BIT(29)
 
 #define   CLK_V3_TX_DELAY_MASK GENMASK(21, 16)
 #define   CLK_V3_RX_DELAY_MASK GENMASK(27, 22)
@@ -88,6 +88,7 @@
 #define   STATUS_BUSY BIT(31)
 #define   STATUS_DESC_BUSY BIT(30)
 #define   STATUS_DATI GENMASK(23, 16)
+#define   STATUS_DAT1 BIT(17)
 
 #define SD_EMMC_IRQ_EN 0x4c
 #define   IRQ_RXD_ERR_MASK GENMASK(7, 0)
@@ -104,7 +105,7 @@
 #define   IRQ_RESP_STATUS BIT(14)
 #define   IRQ_SDIO BIT(15)
 #define   IRQ_EN_MASK \
-	(IRQ_CRC_ERR | IRQ_TIMEOUTS | IRQ_END_OF_CHAIN)
+	(IRQ_CRC_ERR | IRQ_TIMEOUTS | IRQ_END_OF_CHAIN | IRRQ_SDIO)
 
 #define SD_EMMC_CMD_CFG 0x50
 #define SD_EMMC_CMD_ARG 0x54
@@ -954,16 +955,16 @@ static irqreturn_t meson_mmc_irq(int irq, void *dev_id)
 		return IRQ_NONE;
 	}
 
+	if (WARN_ON(!host))
+		return IRQ_NONE;
+
 	/* ack all raised interrupts */
 	writel(status, host->regs + SD_EMMC_STATUS);
 
 	cmd = host->cmd;
 
 	if (status & IRQ_SDIO) {
-		spin_lock(&host->lock);
-		__meson_mmc_enable_sdio_irq(host->mmc, 0);
-		sdio_signal_irq(host->mmc);
-		spin_unlock(&host->lock);
+		mmc_signal_sdio_irq(host->mmc);
 		status &= ~IRQ_SDIO;
 		if (!status)
 			return IRQ_HANDLED;
@@ -1118,9 +1119,16 @@ static void meson_mmc_enable_sdio_irq(struct mmc_host *mmc, int enable)
 {
 	struct meson_host *host = mmc_priv(mmc);
 	unsigned long flags;
+	u32 reg_irqen;
 
 	spin_lock_irqsave(&host->lock, flags);
-	__meson_mmc_enable_sdio_irq(mmc, enable);
+
+	reg_irqen = readl(host->regs + SD_EMMC_IRQ_EN);
+	reg_irqen &= ~IRQ_SDIO;
+	if (enable)
+		reg_irqen |= IRQ_SDIO;
+	writel(reg_irqen, host->regs + SD_EMMC_IRQ_EN);
+
 	spin_unlock_irqrestore(&host->lock, flags);
 }
 
