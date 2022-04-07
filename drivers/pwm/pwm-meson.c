@@ -66,6 +66,8 @@
 #define MESON_NUM_PWMS		2
 #define MESON_NUM_MUX_PARENTS	4
 
+#define XTAL_RATE		24000000
+
 static struct meson_pwm_channel_data {
 	u8		reg_offset;
 	u8		clk_sel_shift;
@@ -109,11 +111,19 @@ struct meson_pwm_channel {
 };
 
 struct meson_pwm_data {
-	const char *const parent_names[MESON_NUM_MUX_PARENTS];
+	/* Parent clock handling */
+	const char * const *parent_names;
+	unsigned int num_parents;
+
+	/* Legacy fields */
 	int (*channels_init)(struct pwm_chip *chip);
 	bool has_constant;
 	bool has_polarity;
+
+	/* S4-specific flag */
+	unsigned int nomux:1;
 };
+
 
 struct meson_pwm {
 	const struct meson_pwm_data *data;
@@ -137,6 +147,22 @@ static int meson_pwm_request(struct pwm_chip *chip, struct pwm_device *pwm)
 	struct meson_pwm_channel *channel = &meson->channels[pwm->hwpwm];
 	struct device *dev = pwmchip_parent(chip);
 	int err;
+
+	if (meson->data->nomux) {
+		err = clk_set_rate(channel->clk, XTAL_RATE);
+		if (err) {
+			dev_err(dev, "failed to set pwm clock rate\n");
+			return err;
+		}
+	} else if (channel->clk_parent) {
+		err = clk_set_parent(channel->clk, channel->clk_parent);
+		if (err < 0) {
+			dev_err(dev, "failed to set parent %s for %s: %d\n",
+				__clk_get_name(channel->clk_parent),
+				__clk_get_name(channel->clk), err);
+			return err;
+		}
+	}
 
 	err = clk_prepare_enable(channel->clk);
 	if (err < 0) {
@@ -269,6 +295,7 @@ static void meson_pwm_disable(struct pwm_chip *chip, struct pwm_device *pwm)
 	struct meson_pwm_channel_data *channel_data;
 	unsigned long flags;
 	u32 value;
+	int err;
 
 	channel_data = &meson_pwm_per_channel_data[pwm->hwpwm];
 
@@ -283,6 +310,28 @@ static void meson_pwm_disable(struct pwm_chip *chip, struct pwm_device *pwm)
 			value |= channel_data->inv_en_mask;
 	}
 
+	value = readl(meson->base + REG_MISC_AB);
+	value |= channel_data->pwm_en_mask;
+	writel(value, meson->base + REG_MISC_AB);
+
+	spin_unlock_irqrestore(&meson->lock, flags);
+
+	if (meson->data->nomux) {
+		err = clk_set_rate(channel->clk, XTAL_RATE / (channel->pre_div + 1));
+		if (err)
+			dev_err(meson->chip.dev, "failed to set pwm clock rate\n");
+	}
+}
+
+static void meson_pwm_disable(struct meson_pwm *meson, struct pwm_device *pwm)
+{
+	unsigned long flags;
+	u32 value;
+
+	spin_lock_irqsave(&meson->lock, flags);
+
+	value = readl(meson->base + REG_MISC_AB);
+	value &= ~meson_pwm_per_channel_data[pwm->hwpwm].pwm_en_mask;
 	writel(value, meson->base + REG_MISC_AB);
 
 	spin_unlock_irqrestore(&meson->lock, flags);
@@ -592,6 +641,10 @@ static const struct meson_pwm_data pwm_s4_data = {
 	.has_polarity = true,
 };
 
+static const struct meson_pwm_data pwm_s4_data = {
+	.nomux = 1,
+};
+
 static const struct of_device_id meson_pwm_matches[] = {
 	{
 		.compatible = "amlogic,meson8-pwm-v2",
@@ -645,6 +698,61 @@ static const struct of_device_id meson_pwm_matches[] = {
 	{},
 };
 MODULE_DEVICE_TABLE(of, meson_pwm_matches);
+
+static int meson_pwm_init_channels(struct meson_pwm *meson)
+{
+	struct device *dev = meson->chip.dev;
+	struct clk_init_data init;
+	unsigned int i;
+	char name[255];
+	int err;
+
+	for (i = 0; i < meson->chip.npwm; i++) {
+		struct meson_pwm_channel *channel = &meson->channels[i];
+
+		if (meson->data->nomux) {
+			snprintf(name, sizeof(name), "clkin%u", i);
+			channel->clk = devm_clk_get(dev, name);
+			if (IS_ERR(channel->clk)) {
+				dev_err(dev, "can't get pwm clock: %pe\n", channel->clk);
+				return PTR_ERR(channel->clk);
+			}
+			continue;
+		}
+
+		snprintf(name, sizeof(name), "%s#mux%u", dev_name(dev), i);
+
+		init.name = name;
+		init.ops = &clk_mux_ops;
+		init.flags = 0;
+		init.parent_names = meson->data->parent_names;
+		init.num_parents = meson->data->num_parents;
+
+		channel->mux.reg = meson->base + REG_MISC_AB;
+		channel->mux.shift =
+				meson_pwm_per_channel_data[i].clk_sel_shift;
+		channel->mux.mask = MISC_CLK_SEL_MASK;
+		channel->mux.flags = 0;
+		channel->mux.lock = &meson->lock;
+		channel->mux.table = NULL;
+		channel->mux.hw.init = &init;
+
+		channel->clk = devm_clk_register(dev, &channel->mux.hw);
+		if (IS_ERR(channel->clk)) {
+			err = PTR_ERR(channel->clk);
+			dev_err(dev, "failed to register %s: %d\n", name, err);
+			return err;
+		}
+
+		snprintf(name, sizeof(name), "clkin%u", i);
+
+		channel->clk_parent = devm_clk_get_optional(dev, name);
+		if (IS_ERR(channel->clk_parent))
+			return PTR_ERR(channel->clk_parent);
+	}
+
+	return 0;
+}
 
 static int meson_pwm_probe(struct platform_device *pdev)
 {
