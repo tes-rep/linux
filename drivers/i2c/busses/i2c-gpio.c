@@ -290,14 +290,14 @@ static void i2c_gpio_get_properties(struct device *dev,
 		device_property_read_bool(dev, "i2c-gpio,sda-open-drain");
 	pdata->scl_is_open_drain =
 		device_property_read_bool(dev, "i2c-gpio,scl-open-drain");
-	pdata->scl_is_output_only =
-		device_property_read_bool(dev, "i2c-gpio,scl-output-only");
-	pdata->sda_is_output_only =
-		device_property_read_bool(dev, "i2c-gpio,sda-output-only");
 	pdata->sda_has_no_pullup =
-		device_property_read_bool(dev, "i2c-gpio,sda-has-no-pullup");
+		of_property_read_bool(np, "i2c-gpio,sda-has-no-pullup");
 	pdata->scl_has_no_pullup =
-		device_property_read_bool(dev, "i2c-gpio,scl-has-no-pullup");
+		of_property_read_bool(np, "i2c-gpio,scl-has-no-pullup");
+	pdata->scl_is_output_only =
+		of_property_read_bool(np, "i2c-gpio,scl-output-only");
+	pdata->sda_is_output_only =
+		of_property_read_bool(np, "i2c-gpio,sda-output-only");
 }
 
 static struct gpio_desc *i2c_gpio_get_desc(struct device *dev,
@@ -345,6 +345,7 @@ static int i2c_gpio_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	struct fwnode_handle *fwnode = dev_fwnode(dev);
 	enum gpiod_flags gflags;
+	bool sda_scl_output_only;
 	int ret;
 
 	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
@@ -373,16 +374,21 @@ static int i2c_gpio_probe(struct platform_device *pdev)
 	 * marking these lines to be handled as open drain, and we should just
 	 * handle them as we handle any other output. Else we enforce open
 	 * drain as this is required for an I2C bus.
+	 * If SCL/SDA both are write-only, then this indicates I2C-like slaves
+	 * with read-only SCL/SDA. Such slaves don't need open-drain, and partially
+	 * don't even work with open-drain.
 	 */
-	if (pdata->sda_is_open_drain || pdata->sda_has_no_pullup)
+	sda_scl_output_only = pdata->sda_is_output_only && pdata->scl_is_output_only;
+	if (pdata->sda_is_open_drain || pdata->sda_has_no_pullup || sda_scl_output_only)
 		gflags = GPIOD_OUT_HIGH;
 	else
 		gflags = GPIOD_OUT_HIGH_OPEN_DRAIN;
 	priv->sda = i2c_gpio_get_desc(dev, "sda", 0, gflags);
 	if (IS_ERR(priv->sda))
 		return PTR_ERR(priv->sda);
-
-	if (pdata->scl_is_open_drain || pdata->scl_has_no_pullup)
+	
+	sda_scl_output_only = pdata->sda_is_output_only && pdata->scl_is_output_only;
+	if (pdata->scl_is_open_drain || pdata->scl_has_no_pullup || sda_scl_output_only)
 		gflags = GPIOD_OUT_HIGH;
 	else
 		gflags = GPIOD_OUT_HIGH_OPEN_DRAIN;
