@@ -88,3 +88,4 @@ dtb-$(CONFIG_ARCH_MESON) += meson-sm1-x96-air.dtb
 dtb-$(CONFIG_ARCH_MESON) += meson-gxbb-odroidc2-hifishield.dtb
 dtb-$(CONFIG_ARCH_MESON) += meson-gxl-s905l-p261.dtb
 dtb-$(CONFIG_ARCH_MESON) += meson-gxl-s905l-p271.dtb
+dtb-$(CONFIG_ARCH_MESON) += meson-gxl-s905l-venz-v10.dtb
