@@ -90,6 +90,7 @@ properties:
       - rc-kworld-plus-tv-analog
       - rc-leadtek-y04g0051
       - rc-lme2510
+      - rc-magicbox
       - rc-manli
       - rc-mecool-kii-pro
       - rc-mecool-kiii-pro
