@@ -95,7 +95,7 @@ RM ?= rm -f
 FEATURE_USER = .bpftool
 FEATURE_TESTS = libbfd disassembler-four-args zlib libcap \
 	clang-bpf-co-re
-FEATURE_DISPLAY = libbfd disassembler-four-args zlib libcap \
+FEATURE_DISPLAY = libbfd zlib libcap \
 	clang-bpf-co-re
 
 check_feat := 1
