@@ -38,10 +38,13 @@
 	gpio-leds {
 		compatible = "gpio-leds";
 
-		blue {
-			function = LED_FUNCTION_STATUS;
-			default-state = "on";
+		led-power {
+			/* red in suspend or power-off */
+			color = <LED_COLOR_ID_BLUE>;
+			function = LED_FUNCTION_POWER;
 			gpios = <&gpio_ao GPIO_TEST_N GPIO_ACTIVE_HIGH>;
+			default-state = "off";
+			panic-indicator;
 		};
 	};
 
