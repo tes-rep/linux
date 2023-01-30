@@ -29,4 +29,10 @@ config TYPEC_MUX_INTEL_PMC
 	  control the USB role switch and also the multiplexer/demultiplexer
 	  switches used with USB Type-C Alternate Modes.
 
+config TYPEC_MUX_CH482D
+	tristate "CH482D GPIO based USB Type-C mux"
+	help
+	  Say Y or M if your system uses a CH482D GPIO based mux for managing
+	  the connected state in a Type-C port.
+
 endmenu
