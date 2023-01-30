@@ -478,6 +478,25 @@
 	vqmmc-supply = <&vcc_1v8>;
 };
 
+/*
+ * EMMC_D4, EMMC_D5, EMMC_D6 and EMMC_D7 pins are shared between SPI NOR CS
+ * and eMMC Data 4 - 7 pins. Replace emmc_data_8b_pins to emmc_data_4b_pins
+ * from sd_emmc_c pinctrl-0 and change bus-width to 4 to enable spifc.
+ */
+&spifc {
+	status = "disabled";
+	pinctrl-0 = <&nor_pins>;
+	pinctrl-names = "default";
+
+	flash@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <104000000>;
+	};
+};
+
 &tdmif_b {
 	status = "okay";
 };
