@@ -1,0 +1,73 @@
+# SPDX-License-Identifier: GPL-2.0-only OR BSD-2-Clause
+%YAML 1.2
+---
+$id: "http://devicetree.org/schemas/usb/ch482d-gpio-switch.yaml#"
+$schema: "http://devicetree.org/meta-schemas/core.yaml#"
+
+title: CH482D GPIO-based switch
+
+maintainers:
+  - Bjorn Andersson <bjorn.andersson@linaro.org>
+
+description:
+  In USB Type-C applications the main chip needs to be connected, disconnected
+  and swapped depending on the orientation. This binding describes the CH482D
+  which performs this based on simple GPIO control.
+
+properties:
+  compatible:
+    items:
+      - enum:
+          - wcn,ch482d
+      - const: ch482d-gpio-switch
+
+  enable-gpios:
+    description: Switch enable GPIO
+
+  select-gpios:
+    description: Orientation select
+
+  vcc-supply:
+    description: power supply
+
+  mode-switch:
+    description: Flag the port as possible handle of altmode switching
+    type: boolean
+
+  orientation-switch:
+    description: Flag the port as possible handler of orientation switching
+    type: boolean
+
+  port:
+    $ref: /schemas/graph.yaml#/properties/port
+    description:
+      A port node to link the SBU mux to a TypeC controller for the purpose of
+      handling altmode muxing and orientation switching.
+
+required:
+  - compatible
+  - select-gpios
+  - orientation-switch
+  - port
+
+additionalProperties: false
+
+examples:
+  - |
+    #include <dt-bindings/gpio/gpio.h>
+
+    ch482d-mux {
+      compatible = "wcn,ch482d", "ch482d-gpio-switch";
+
+      /* enabled through pull-down */
+      select-gpios = <&gpio GPIOC_7 GPIO_ACTIVE_LOW>;
+
+      orientation-switch;
+
+      port {
+        endpoint {
+          remote-endpoint = <&typec_ss>;
+        };
+      };
+    };
+...
