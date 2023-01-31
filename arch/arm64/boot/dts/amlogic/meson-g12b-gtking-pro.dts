@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include "meson-g12b-w400.dtsi"
+#include "meson-g12b-w400-revc.dtsi"
 #include <dt-bindings/sound/meson-g12a-tohdmitx.h>
 
 / {
