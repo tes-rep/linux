@@ -85,6 +85,7 @@ obj-$(CONFIG_DVB_MT312) += mt312.o
 obj-$(CONFIG_DVB_MT352) += mt352.o
 obj-$(CONFIG_DVB_MXL5XX) += mxl5xx.o
 obj-$(CONFIG_DVB_MXL692) += mxl692.o
+obj-$(CONFIG_DVB_NIMDETECT) += nimdetect.o
 obj-$(CONFIG_DVB_NXT200X) += nxt200x.o
 obj-$(CONFIG_DVB_NXT6000) += nxt6000.o
 obj-$(CONFIG_DVB_OR51132) += or51132.o
