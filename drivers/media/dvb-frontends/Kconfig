@@ -382,6 +382,13 @@ config DVB_CXD2841ER
 	help
 	  Say Y when you want to support this frontend.
 
+config DVB_CXD2841ER_WETEK
+	tristate "Sony CXD2841ER for WeTek Play2"
+	depends on DVB_CORE && I2C
+	default m if !MEDIA_SUBDRV_AUTOSELECT
+	help
+	  Say Y when you want to support this frontend.
+
 config DVB_DIB3000MB
 	tristate "DiBcom 3000M-B"
 	depends on DVB_CORE && I2C
