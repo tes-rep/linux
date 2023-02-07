@@ -132,6 +132,7 @@ obj-$(CONFIG_DVB_TUNER_DIB0090) += dib0090.o
 obj-$(CONFIG_DVB_TUNER_ITD1000) += itd1000.o
 obj-$(CONFIG_DVB_VES1820) += ves1820.o
 obj-$(CONFIG_DVB_VES1X93) += ves1x93.o
+obj-$(CONFIG_DVB_WETEK) += wetek.o
 obj-$(CONFIG_DVB_ZD1301_DEMOD) += zd1301_demod.o
 obj-$(CONFIG_DVB_ZL10036) += zl10036.o
 obj-$(CONFIG_DVB_ZL10039) += zl10039.o
