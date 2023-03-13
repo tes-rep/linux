@@ -2355,14 +2355,14 @@ done:
 static void ath10k_core_fetch_btcoex_dt(struct ath10k *ar)
 {
 	struct device_node *node;
-	u8 coex_support = 0;
+	u32 coex_support = 0;
 	int ret;
 
 	node = ar->dev->of_node;
 	if (!node)
 		goto out;
 
-	ret = of_property_read_u8(node, "qcom,coexist-support", &coex_support);
+	ret = of_property_read_u32(node, "qcom,coexist-support", &coex_support);
 	if (ret) {
 		ar->coex_support = true;
 		goto out;
