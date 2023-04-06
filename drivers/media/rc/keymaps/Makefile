@@ -88,6 +88,7 @@ obj-$(CONFIG_RC_MAP) += \
 			rc-msi-tvanywhere-plus.o \
 			rc-nebula.o \
 			rc-nec-terratec-cinergy-xs.o \
+			rc-nexbox-a95x.o \
 			rc-norwood.o \
 			rc-npgtech.o \
 			rc-odroid.o \
