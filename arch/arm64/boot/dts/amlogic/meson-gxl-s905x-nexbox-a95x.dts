@@ -139,6 +139,7 @@
 	status = "okay";
 	pinctrl-0 = <&remote_input_ao_pins>;
 	pinctrl-names = "default";
+	linux,rc-map-name = "rc-nexbox-a95x";
 };
 
 &pwm_ef {
