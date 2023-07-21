@@ -3,6 +3,6 @@
 
 meson-hevc-objs = esparser.o vdec.o vdec_helpers.o vdec_platform.o
 meson-hevc-objs += vdec_1.o vdec_hevc.o
-meson-hevc-objs += codec_mpeg12.o codec_h264.o codec_hevc_common.o codec_vp9.o codec_hevc.o
+meson-hevc-objs += codec_mpeg12.o codec_h264.o codec_hevc_common.o codec_vp9.o h264_dpb.o codec_h264_multi.o
 
 obj-$(CONFIG_VIDEO_MESON_HEVC) += meson-hevc.o

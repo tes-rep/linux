@@ -14,6 +14,7 @@
 #include "codec_mpeg4.h"
 #include "codec_hevc.h"
 #include "codec_vp9.h"
+#include "codec_h264_multi.h"
 
 static const struct amvdec_format vdec_formats_gxbb[] = {
 	{
@@ -29,17 +30,6 @@ static const struct amvdec_format vdec_formats_gxbb[] = {
 		.flags = V4L2_FMT_FLAG_COMPRESSED |
 			 V4L2_FMT_FLAG_DYN_RESOLUTION,
 	},
-    {
-		.pixfmt = V4L2_PIX_FMT_HEVC,
-		.min_buffers = 16,
-		.max_buffers = 24,
-		.max_width = 3840,
-		.max_height = 2160,
-		.vdec_ops = &vdec_hevc_ops,
-		.codec_ops = &codec_hevc_ops,
-		.firmware_path = "meson/gx/vh265_mc",
-		.pixfmts_cap = { V4L2_PIX_FMT_NV12M, V4L2_PIX_FMT_AM21C, 0 },
-	},
 };
 
 static const struct amvdec_format vdec_formats_gxl[] = {
@@ -50,13 +40,14 @@ static const struct amvdec_format vdec_formats_gxl[] = {
 		.max_width = 3840,
 		.max_height = 2160,
 		.vdec_ops = &vdec_1_ops,
-		.codec_ops = &codec_h264_ops,
-		.firmware_path = "meson/vdec/gxl_h264.bin",
+		.codec_ops = &codec_h264_multi_ops,
+		.firmware_path = "meson/vdec/gxl_h264_multi.bin",
 		.pixfmts_cap = { V4L2_PIX_FMT_NV12M, 0 },
 		.flags = V4L2_FMT_FLAG_COMPRESSED |
 			 V4L2_FMT_FLAG_DYN_RESOLUTION,
+		.direct_input = 1,
 	},
-    {
+	{
 		.pixfmt = V4L2_PIX_FMT_VP9,
 		.min_buffers = 16,
 		.max_buffers = 24,
@@ -65,17 +56,6 @@ static const struct amvdec_format vdec_formats_gxl[] = {
 		.vdec_ops = &vdec_hevc_ops,
 		.codec_ops = &codec_vp9_ops,
 		.firmware_path = "meson/gx/vvp9_mc",
-		.pixfmts_cap = { V4L2_PIX_FMT_NV12M, V4L2_PIX_FMT_AM21C, 0 },
-	},
-	{
-		.pixfmt = V4L2_PIX_FMT_HEVC,
-		.min_buffers = 16,
-		.max_buffers = 24,
-		.max_width = 3840,
-		.max_height = 2160,
-		.vdec_ops = &vdec_hevc_ops,
-		.codec_ops = &codec_hevc_ops,
-		.firmware_path = "meson/gx/vh265_mc",
 		.pixfmts_cap = { V4L2_PIX_FMT_NV12M, V4L2_PIX_FMT_AM21C, 0 },
 	},
 };
@@ -105,17 +85,6 @@ static const struct amvdec_format vdec_formats_gxm[] = {
 		.firmware_path = "meson/gx/vvp9_mc",
 		.pixfmts_cap = { V4L2_PIX_FMT_NV12M, V4L2_PIX_FMT_AM21C, 0 },
 	},
-	{
-		.pixfmt = V4L2_PIX_FMT_HEVC,
-		.min_buffers = 16,
-		.max_buffers = 24,
-		.max_width = 3840,
-		.max_height = 2160,
-		.vdec_ops = &vdec_hevc_ops,
-		.codec_ops = &codec_hevc_ops,
-		.firmware_path = "meson/gx/vh265_mc",
-		.pixfmts_cap = { V4L2_PIX_FMT_NV12M, V4L2_PIX_FMT_AM21C, 0 },
-	},
 };
 
 static const struct amvdec_format vdec_formats_g12a[] = {
@@ -141,17 +110,6 @@ static const struct amvdec_format vdec_formats_g12a[] = {
 		.vdec_ops = &vdec_hevc_ops,
 		.codec_ops = &codec_vp9_ops,
 		.firmware_path = "meson/vdec/g12a_vp9.bin",
-		.pixfmts_cap = { V4L2_PIX_FMT_NV12M, V4L2_PIX_FMT_AM21C, 0 },
-	},
-	{
-		.pixfmt = V4L2_PIX_FMT_HEVC,
-		.min_buffers = 16,
-		.max_buffers = 24,
-		.max_width = 3840,
-		.max_height = 2160,
-		.vdec_ops = &vdec_hevc_ops,
-		.codec_ops = &codec_hevc_ops,
-		.firmware_path = "meson/vdec/g12a_hevc.bin",
 		.pixfmts_cap = { V4L2_PIX_FMT_NV12M, V4L2_PIX_FMT_AM21C, 0 },
 	},
 };

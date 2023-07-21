@@ -993,7 +993,7 @@ static void codec_vp9_process_lf(struct codec_vp9 *vp9)
 		& 0x3f) : (param->p.seg_lf_info[i] & 0x3f);
 }
 
-static void codec_vp9_resume(struct amvdec_session *sess)
+static void codec_vp9_resume(struct amvdec_session *sess, int changed)
 {
 	struct codec_vp9 *vp9 = sess->priv;
 

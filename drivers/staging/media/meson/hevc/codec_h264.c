@@ -295,7 +295,7 @@ static void codec_h264_set_par(struct amvdec_session *sess)
 	sess->pixelaspect = par_table[ar_idc];
 }
 
-static void codec_h264_resume(struct amvdec_session *sess)
+static void codec_h264_resume(struct amvdec_session *sess, int changed)
 {
 	struct amvdec_core *core = sess->core;
 	struct codec_h264 *h264 = sess->priv;

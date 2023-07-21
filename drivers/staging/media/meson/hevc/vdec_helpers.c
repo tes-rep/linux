@@ -90,6 +90,7 @@ static int canvas_alloc(struct amvdec_session *sess, u8 *canvas_id)
 	if (ret)
 		return ret;
 
+	printk("Allocated canvas %u\n", *canvas_id);
 	sess->canvas_alloc[sess->canvas_num++] = *canvas_id;
 	return 0;
 }
@@ -219,8 +220,8 @@ int amvdec_set_canvases(struct amvdec_session *sess,
 {
 	struct v4l2_m2m_buffer *buf;
 	u32 pixfmt = sess->pixfmt_cap;
-	u32 width = ALIGN(sess->width, 64);
-	u32 height = ALIGN(sess->height, 64);
+	u32 width = ALIGN(sess->width, 32);
+	u32 height = ALIGN(sess->height, 32);
 	u32 reg_cur = reg_base[0];
 	u32 reg_num_cur = 0;
 	u32 reg_base_cur = 0;
@@ -264,7 +265,10 @@ int amvdec_set_canvases(struct amvdec_session *sess,
 			reg_num_cur = 0;
 		}
 
-		sess->fw_idx_to_vb2_idx[i++] = buf->vb.vb2_buf.index;
+		printk("mapping vb2 %u<->%u fw\n", buf->vb.vb2_buf.index, i);
+		sess->vb2_idx_to_fw_idx[buf->vb.vb2_buf.index] = i;
+		sess->fw_idx_to_vb2_idx[i] = buf->vb.vb2_buf.index;
+		i++;
 	}
 
 	return 0;
@@ -498,13 +502,15 @@ void amvdec_src_change(struct amvdec_session *sess, u32 width,
 	 * Check if the capture queue is already configured well for our
 	 * usecase. If so, keep decoding with it and do not send the event
 	 */
-	if (sess->width == width &&
+	if (sess->streamon_cap &&
+	    sess->width == width &&
 	    sess->height == height &&
 	    dpb_size <= sess->num_dst_bufs) {
-		sess->fmt_out->codec_ops->resume(sess);
+		sess->fmt_out->codec_ops->resume(sess, 0);
 		return;
 	}
 
+	printk("Sending event\n");
 	sess->changed_format = 0;
 	sess->width = width;
 	sess->height = height;
@@ -518,7 +524,7 @@ EXPORT_SYMBOL_GPL(amvdec_src_change);
 
 void amvdec_abort(struct amvdec_session *sess)
 {
-	dev_warn(sess->core->dev, "Aborting decoding session!\n");
+	dev_info(sess->core->dev, "Aborting decoding session!\n");
 	vb2_queue_error(&sess->m2m_ctx->cap_q_ctx.q);
 	vb2_queue_error(&sess->m2m_ctx->out_q_ctx.q);
 }

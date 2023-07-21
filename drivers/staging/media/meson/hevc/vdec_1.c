@@ -20,6 +20,10 @@
 	#define GEN_PWR_VDEC_1 (BIT(3) | BIT(2))
 
 #define MC_SIZE			(4096 * 4)
+#define VLD_PADDING_SIZE	1024
+#define VDEC_FIFO_ALIGN		8
+#define MIN_FRAME_PADDING_SIZE ((u32)(L1_CACHE_BYTES))
+#define EXTRA_PADDING_SIZE	(16 * SZ_1K)
 
 #define DEBUG 1
 #define XXX(fmt, args...) \
@@ -77,11 +81,9 @@ vdec_1_load_firmware(struct amvdec_session *sess, const char *fwname)
 		goto free_mc;
 	}
 
-	if (codec_ops->load_extended_firmware) {
-		ret = codec_ops->load_extended_firmware(sess,
-							fw->data + MC_SIZE,
-							fw->size - MC_SIZE);
-	}
+	if (codec_ops->load_extended_firmware)
+		ret = codec_ops->load_extended_firmware(sess, fw->data,
+							fw->size);
 
 free_mc:
 	dma_free_coherent(core->dev, MC_SIZE, mc_addr, mc_addr_map);
@@ -102,7 +104,8 @@ static int vdec_1_stbuf_power_up(struct amvdec_session *sess)
 	amvdec_write_dos(core, VLD_MEM_VIFIFO_START_PTR, sess->vififo_paddr);
 	amvdec_write_dos(core, VLD_MEM_VIFIFO_CURR_PTR, sess->vififo_paddr);
 	amvdec_write_dos(core, VLD_MEM_VIFIFO_END_PTR,
-			 sess->vififo_paddr + sess->vififo_size - 8);
+			 sess->vififo_paddr + sess->vififo_size -
+			 VDEC_FIFO_ALIGN);
 
 	amvdec_write_dos_bits(core, VLD_MEM_VIFIFO_CONTROL, 1);
 	amvdec_clear_dos_bits(core, VLD_MEM_VIFIFO_CONTROL, 1);
@@ -127,6 +130,7 @@ static void vdec_1_conf_esparser(struct amvdec_session *sess)
 	XXX();
 
 	/* VDEC_1 specific ESPARSER stuff */
+	printk("DOS_GEN_CTRL0: %08X\n", amvdec_read_dos(core, DOS_GEN_CTRL0));
 	amvdec_write_dos(core, DOS_GEN_CTRL0, 0);
 	amvdec_write_dos(core, VLD_MEM_VIFIFO_BUF_CNTL, 1);
 	amvdec_clear_dos_bits(core, VLD_MEM_VIFIFO_BUF_CNTL, 1);
@@ -159,7 +163,7 @@ static int vdec_1_stop(struct amvdec_session *sess)
 	amvdec_write_dos(core, DOS_MEM_PD_VDEC, 0xffffffff);
 	/* power off vdec1 */
 	regmap_update_bits(core->regmap_ao, AO_RTI_GEN_PWR_SLEEP0,
-			   GEN_PWR_VDEC_1, GEN_PWR_VDEC_1);
+				   GEN_PWR_VDEC_1, GEN_PWR_VDEC_1);
 
 	clk_disable_unprepare(core->vdec_1_clk);
 
@@ -185,7 +189,7 @@ static int vdec_1_start(struct amvdec_session *sess)
 
 	/* Enable power for VDEC_1 */
 	regmap_update_bits(core->regmap_ao, AO_RTI_GEN_PWR_SLEEP0,
-			   GEN_PWR_VDEC_1, 0);
+				   GEN_PWR_VDEC_1, 0);
 	usleep_range(10, 20);
 
 	/* Reset VDEC1 */
@@ -196,7 +200,6 @@ static int vdec_1_start(struct amvdec_session *sess)
 
 	/* enable VDEC Memories */
 	amvdec_write_dos(core, DOS_MEM_PD_VDEC, 0);
-	/* Remove VDEC1 Isolation */
 	regmap_write(core->regmap_ao, AO_RTI_GEN_PWR_ISO0, 0);
 	/* Reset DOS top registers */
 	amvdec_write_dos(core, DOS_VDEC_MCRCC_STALL_CTRL, 0);
@@ -219,8 +222,7 @@ static int vdec_1_start(struct amvdec_session *sess)
 	amvdec_write_dos(core, ASSIST_MBOX1_MASK, 1);
 
 	/* Enable 2-plane output */
-	if (sess->pixfmt_cap == V4L2_PIX_FMT_NV12 ||
-	    sess->pixfmt_cap == V4L2_PIX_FMT_NV12M)
+	if (sess->pixfmt_cap == V4L2_PIX_FMT_NV12M)
 		amvdec_write_dos_bits(core, MDEC_PIC_DC_CTRL, BIT(17));
 	else
 		amvdec_clear_dos_bits(core, MDEC_PIC_DC_CTRL, BIT(17));
@@ -237,9 +239,52 @@ stop:
 	return ret;
 }
 
+static void vdec_1_process_input(struct amvdec_session *sess, dma_addr_t start,
+				 u32 size)
+{
+	struct amvdec_core *core = sess->core;
+	struct amvdec_codec_ops *codec_ops = sess->fmt_out->codec_ops;
+	int dummy;
+
+	if (!codec_ops->input_ready || !codec_ops->notify ||
+	    !codec_ops->input_ready(sess)) {
+		WARN_ONCE(1, "Codec has no direct input or is not ready\n");
+		return;
+	}
+
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_CONTROL, 0);
+	amvdec_write_dos(core, DOS_SW_RESET0, BIT(5) | BIT(4) | BIT(3));
+	amvdec_write_dos(core, DOS_SW_RESET0, 0);
+	/* Dummy read to wait for reset */
+	dummy = amvdec_read_dos(core, DOS_SW_RESET0);
+	dummy = amvdec_read_dos(core, DOS_SW_RESET0);
+	dummy = amvdec_read_dos(core, DOS_SW_RESET0);
+	amvdec_write_dos(core, POWER_CTL_VLD, BIT(4));
+
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_START_PTR, start);
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_END_PTR, start + SZ_512K - 8);
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_CURR_PTR, start);
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_CONTROL, 1);
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_CONTROL, 0);
+	/* set to manual input mode */
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_BUF_CNTL, 2);
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_RP, start);
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_WP, start + size + VLD_PADDING_SIZE);
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_BUF_CNTL, 3);
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_BUF_CNTL, 2);
+	amvdec_write_dos(core, VLD_MEM_VIFIFO_CONTROL, (0x11 << 16) | (1<<10) | (7<<3));
+	amvdec_write_dos_bits(core, POWER_CTL_VLD, BIT(9) | BIT(6));
+
+	codec_ops->notify(sess, size);
+
+	/* Enable VLD input */
+	amvdec_write_dos_bits(core, VLD_MEM_VIFIFO_CONTROL, BIT(2) | BIT(1));
+}
+
 struct amvdec_ops vdec_1_ops = {
 	.start = vdec_1_start,
 	.stop = vdec_1_stop,
 	.conf_esparser = vdec_1_conf_esparser,
 	.vififo_level = vdec_1_vififo_level,
+	.process_input = vdec_1_process_input,
 };

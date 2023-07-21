@@ -86,10 +86,10 @@ static irqreturn_t esparser_isr(int irq, void *dev)
  * VP9 frame headers need to be appended by a 16-byte long
  * Amlogic custom header
  */
-static int vp9_update_header(struct vb2_buffer *buf)
+static int vp9_update_header(struct amvdec_core *core, struct vb2_buffer *buf)
 {
-	uint8_t *dp;
-	uint8_t marker;
+	u8 *dp;
+	u8 marker;
 	int dsize;
 	int num_frames, cur_frame;
 	int cur_mag, mag, mag_ptr;
@@ -98,28 +98,37 @@ static int vp9_update_header(struct vb2_buffer *buf)
 	int new_frame_size;
 	unsigned char *old_header = NULL;
 
-	dp = (uint8_t *) vb2_plane_vaddr(buf, 0);
+	dp = (uint8_t *)vb2_plane_vaddr(buf, 0);
 	dsize = vb2_get_plane_payload(buf, 0);
+
+	if (dsize == vb2_plane_size(buf, 0)) {
+		dev_warn(core->dev, "%s: unable to update header\n", __func__);
+		return 0;
+	}
 
 	marker = dp[dsize - 1];
 	if ((marker & 0xe0) == 0xc0) {
 		num_frames = (marker & 0x7) + 1;
 		mag = ((marker >> 3) & 0x3) + 1;
 		mag_ptr = dsize - mag * num_frames - 2;
-		if (dp[mag_ptr] != marker) {
+		if (dp[mag_ptr] != marker)
 			return 0;
-		}
+
 		mag_ptr++;
 		for (cur_frame = 0; cur_frame < num_frames; cur_frame++) {
 			frame_size[cur_frame] = 0;
 			for (cur_mag = 0; cur_mag < mag; cur_mag++) {
-				frame_size[cur_frame] |= (dp[mag_ptr] << (cur_mag * 8));
+				frame_size[cur_frame] |=
+					(dp[mag_ptr] << (cur_mag * 8));
 				mag_ptr++;
 			}
 			if (cur_frame == 0)
-				tot_frame_size[cur_frame] = frame_size[cur_frame];
+				tot_frame_size[cur_frame] =
+					frame_size[cur_frame];
 			else
-				tot_frame_size[cur_frame] = tot_frame_size[cur_frame - 1] + frame_size[cur_frame];
+				tot_frame_size[cur_frame] =
+					tot_frame_size[cur_frame - 1] +
+					frame_size[cur_frame];
 			total_datasize += frame_size[cur_frame];
 		}
 	} else {
@@ -131,13 +140,18 @@ static int vp9_update_header(struct vb2_buffer *buf)
 
 	new_frame_size = total_datasize + num_frames * VP9_HEADER_SIZE;
 
+	if (new_frame_size >= vb2_plane_size(buf, 0)) {
+		dev_warn(core->dev, "%s: unable to update header\n", __func__);
+		return 0;
+	}
+
 	for (cur_frame = num_frames - 1; cur_frame >= 0; cur_frame--) {
 		int framesize = frame_size[cur_frame];
 		int framesize_header = framesize + 4;
 		int oldframeoff = tot_frame_size[cur_frame] - framesize;
 		int outheaderoff =  oldframeoff + cur_frame * VP9_HEADER_SIZE;
-		uint8_t *fdata = dp + outheaderoff;
-		uint8_t *old_framedata = dp + oldframeoff;
+		u8 *fdata = dp + outheaderoff;
+		u8 *old_framedata = dp + oldframeoff;
 
 		memmove(fdata + VP9_HEADER_SIZE, old_framedata, framesize);
 
@@ -145,10 +159,10 @@ static int vp9_update_header(struct vb2_buffer *buf)
 		fdata[1] = (framesize_header >> 16) & 0xff;
 		fdata[2] = (framesize_header >> 8) & 0xff;
 		fdata[3] = (framesize_header >> 0) & 0xff;
-		fdata[4] = ((framesize_header >> 24) & 0xff) ^0xff;
-		fdata[5] = ((framesize_header >> 16) & 0xff) ^0xff;
-		fdata[6] = ((framesize_header >> 8) & 0xff) ^0xff;
-		fdata[7] = ((framesize_header >> 0) & 0xff) ^0xff;
+		fdata[4] = ((framesize_header >> 24) & 0xff) ^ 0xff;
+		fdata[5] = ((framesize_header >> 16) & 0xff) ^ 0xff;
+		fdata[6] = ((framesize_header >> 8) & 0xff) ^ 0xff;
+		fdata[7] = ((framesize_header >> 0) & 0xff) ^ 0xff;
 		fdata[8] = 0;
 		fdata[9] = 0;
 		fdata[10] = 0;
@@ -161,10 +175,12 @@ static int vp9_update_header(struct vb2_buffer *buf)
 		if (!old_header) {
 			/* nothing */
 		} else if (old_header > fdata + 16 + framesize) {
-			printk("data has gaps, setting to 0\n");
-			memset(fdata + 16 + framesize, 0, (old_header - fdata + 16 + framesize));
+			dev_dbg(core->dev, "%s: data has gaps, setting to 0\n",
+				__func__);
+			memset(fdata + 16 + framesize, 0,
+			       (old_header - fdata + 16 + framesize));
 		} else if (old_header < fdata + 16 + framesize) {
-			printk("data overwritten\n");
+			dev_err(core->dev, "%s: data overwritten\n", __func__);
 		}
 		old_header = fdata;
 	}
@@ -177,21 +193,29 @@ static int vp9_update_header(struct vb2_buffer *buf)
  * Also append a start code 000001ff at the end to trigger
  * the ESPARSER interrupt.
  */
-static u32 esparser_pad_start_code(struct vb2_buffer *vb, u32 payload_size)
+static u32 esparser_pad_start_code(struct amvdec_core *core,
+				   struct vb2_buffer *vb,
+				   u32 payload_size)
 {
 	u32 pad_size = 0;
-	u8 *vaddr = vb2_plane_vaddr(vb, 0) + payload_size;
+	u8 *vaddr = vb2_plane_vaddr(vb, 0);
 
 	if (payload_size < ESPARSER_MIN_PACKET_SIZE) {
 		pad_size = ESPARSER_MIN_PACKET_SIZE - payload_size;
-		memset(vaddr, 0, pad_size);
+		memset(vaddr + payload_size, 0, pad_size);
 	}
 
-	memset(vaddr + pad_size, 0, SEARCH_PATTERN_LEN);
-	vaddr[pad_size]     = 0x00;
-	vaddr[pad_size + 1] = 0x00;
-	vaddr[pad_size + 2] = 0x01;
-	vaddr[pad_size + 3] = 0xff;
+	if ((payload_size + pad_size + SEARCH_PATTERN_LEN) >
+						vb2_plane_size(vb, 0)) {
+		dev_warn(core->dev, "%s: unable to pad start code\n", __func__);
+		return pad_size;
+	}
+
+	memset(vaddr + payload_size + pad_size, 0, SEARCH_PATTERN_LEN);
+	vaddr[payload_size + pad_size]     = 0x00;
+	vaddr[payload_size + pad_size + 1] = 0x00;
+	vaddr[payload_size + pad_size + 2] = 0x01;
+	vaddr[payload_size + pad_size + 3] = 0xff;
 
 	return pad_size;
 }
@@ -230,7 +254,8 @@ static u32 esparser_vififo_get_free_space(struct amvdec_session *sess)
 			 vififo_usage, sess->vififo_size);
 
 	if (vififo_usage > sess->vififo_size) {
-		XXX( "VIFIFO usage (%u) > VIFIFO size (%u)",
+		dev_warn(sess->core->dev,
+			 "VIFIFO usage (%u) > VIFIFO size (%u)\n",
 			 vififo_usage, sess->vififo_size);
 		return 0;
 	}
@@ -281,54 +306,68 @@ esparser_queue(struct amvdec_session *sess, struct vb2_v4l2_buffer *vbuf)
 	int ret;
 	struct vb2_buffer *vb = &vbuf->vb2_buf;
 	struct amvdec_core *core = sess->core;
+	struct amvdec_codec_ops *codec_ops = sess->fmt_out->codec_ops;
 	u32 payload_size = vb2_get_plane_payload(vb, 0);
 	dma_addr_t phy = vb2_dma_contig_plane_dma_addr(vb, 0);
+	u32 num_dst_bufs = 0;
 	u32 offset;
 	u32 pad_size;
 	u32 wp, wp2;
 	u32 vififo_free;
 
-	vififo_free = esparser_vififo_get_free_space(sess);
-	if (vififo_free < payload_size)
+	if (sess->fmt_out->pixfmt == V4L2_PIX_FMT_VP9) {
+		if (codec_ops->num_pending_bufs)
+			num_dst_bufs = codec_ops->num_pending_bufs(sess);
+
+		num_dst_bufs += v4l2_m2m_num_dst_bufs_ready(sess->m2m_ctx);
+		if (sess->fmt_out->pixfmt == V4L2_PIX_FMT_VP9)
+			num_dst_bufs -= 2;
+
+		if (esparser_vififo_get_free_space(sess) < payload_size ||
+		    atomic_read(&sess->esparser_queued_bufs) >= num_dst_bufs)
+			return -EAGAIN;
+	} else if (esparser_vififo_get_free_space(sess) < payload_size) {
 		return -EAGAIN;
+	}
 
 	v4l2_m2m_src_buf_remove_by_buf(sess->m2m_ctx, vbuf);
 
 	offset = esparser_get_offset(sess);
 
 	amvdec_add_ts(sess, vb->timestamp, vbuf->timecode, offset, vbuf->flags);
-	XXX("esparser: ts = %llu pld_size = %u offset = %08X flags = %08X",
+	dev_info(core->dev, "esparser: ts = %llu pld_size = %u offset = %08X flags = %08X\n",
 		vb->timestamp, payload_size, offset, vbuf->flags);
 
 	vbuf->flags = 0;
 	vbuf->field = V4L2_FIELD_NONE;
 	vbuf->sequence = sess->sequence_out++;
 
-	if (sess->fmt_out->pixfmt == V4L2_PIX_FMT_VP9)
-		payload_size = vp9_update_header(vb);
+	if (sess->fmt_out->pixfmt == V4L2_PIX_FMT_VP9) {
+		payload_size = vp9_update_header(core, vb);
 
-	pad_size = esparser_pad_start_code(vb, payload_size);
-	wp = amvdec_read_parser(core, PARSER_VIDEO_WP);
-	ret = esparser_write_data(core, phy, payload_size + pad_size);
-	wp2 = amvdec_read_parser(core, PARSER_VIDEO_WP);
-
-	if (ret <= 0) {
-		XXX();
-		//dev_warn(core->dev, "esparser: input parsing error\n");
-		//amvdec_remove_ts(sess, vb->timestamp);
-		//v4l2_m2m_buf_done(vbuf, VB2_BUF_STATE_ERROR);
-		amvdec_write_parser(core, PARSER_FETCH_CMD, 0);
-		if (ret < 0 || wp2 == wp) {
-			dev_err(core->dev, "esparser: input parsing error ret %d (%x <=> %x)\n",
-					ret, wp, wp2);
+		/* If unable to alter buffer to add headers */
+		if (payload_size == 0) {
 			amvdec_remove_ts(sess, vb->timestamp);
 			v4l2_m2m_buf_done(vbuf, VB2_BUF_STATE_ERROR);
 
 			return 0;
 		}
-
-		//return 0;
 	}
+
+	pad_size = esparser_pad_start_code(core, vb, payload_size);
+	ret = esparser_write_data(core, phy, payload_size + pad_size);
+
+	if (ret <= 0) {
+		dev_warn(core->dev, "esparser: input parsing error\n");
+		amvdec_remove_ts(sess, vb->timestamp);
+		v4l2_m2m_buf_done(vbuf, VB2_BUF_STATE_ERROR);
+		amvdec_write_parser(core, PARSER_FETCH_CMD, 0);
+
+		return 0;
+	}
+
+	if (codec_ops->notify)
+		codec_ops->notify(sess, payload_size);
 
 	atomic_inc(&sess->esparser_queued_bufs);
 	v4l2_m2m_buf_done(vbuf, VB2_BUF_STATE_DONE);
@@ -336,19 +375,54 @@ esparser_queue(struct amvdec_session *sess, struct vb2_v4l2_buffer *vbuf)
 	return 0;
 }
 
+void esparser_queue_direct(struct amvdec_session *sess,
+			   struct vb2_v4l2_buffer *vbuf)
+{
+	struct amvdec_core *core = sess->core;
+	struct amvdec_ops *vdec_ops = sess->fmt_out->vdec_ops;
+	struct vb2_buffer *vb = &vbuf->vb2_buf;
+	dma_addr_t phy = vb2_dma_contig_plane_dma_addr(vb, 0);
+	u8 *vaddr = vb2_plane_vaddr(vb, 0);
+	u32 payload_size = vb2_get_plane_payload(vb, 0);
+	u32 pad_size;
+	int i;
+
+	memset(vaddr + payload_size, 0, 1024);
+
+	/* Release previous src buffer */
+	if (sess->cur_direct_input_vbuf) {
+		sess->cur_direct_input_vbuf->flags = 0;
+		sess->cur_direct_input_vbuf->field = V4L2_FIELD_NONE;
+		sess->cur_direct_input_vbuf->sequence = sess->sequence_out++;
+		v4l2_m2m_buf_done(sess->cur_direct_input_vbuf,
+				  VB2_BUF_STATE_DONE);
+	}
+
+	v4l2_m2m_src_buf_remove_by_buf(sess->m2m_ctx, vbuf);
+	amvdec_add_ts(sess, vb->timestamp, vbuf->timecode, phy, vbuf->flags);
+	sess->cur_direct_input_vbuf = vbuf;
+	vdec_ops->process_input(sess, phy, payload_size);
+}
+
 void esparser_queue_all_src(struct work_struct *work)
 {
 	struct v4l2_m2m_buffer *buf, *n;
 	struct amvdec_session *sess =
 		container_of(work, struct amvdec_session, esparser_queue_work);
+	struct amvdec_codec_ops *codec_ops = sess->fmt_out->codec_ops;
+	const struct amvdec_format *fmt_out = sess->fmt_out;
 
 	mutex_lock(&sess->lock);
 	v4l2_m2m_for_each_src_buf_safe(sess->m2m_ctx, buf, n) {
 		if (sess->should_stop)
 			break;
-
-		if (esparser_queue(sess, &buf->vb) < 0)
+		if (fmt_out->direct_input) {
+			if (!codec_ops->input_ready(sess))
+				break;
+			esparser_queue_direct(sess, &buf->vb);
+		} else if (esparser_queue(sess, &buf->vb) < 0) {
 			break;
+		}
 	}
 	mutex_unlock(&sess->lock);
 }

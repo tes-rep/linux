@@ -62,7 +62,7 @@ struct amvdec_session;
  * @vdec_hevc_clk: VDEC_HEVC clock
  * @vdec_hevcf_clk: VDEC_HEVCF clock
  * @esparser_reset: RESET for the PARSER
- * @vdev_dec: video device for the decoder
+ * @vdec_dec: video device for the decoder
  * @v4l2_dev: v4l2 device
  * @cur_sess: current decoding session
  * @lock: video device lock
@@ -105,12 +105,16 @@ struct amvdec_core {
  * @vififo_level: mandatory call to get the current amount of data
  *		  in the VIFIFO
  * @use_offsets: mandatory call. Returns 1 if the VDEC supports vififo offsets
+ * @process_input: Directly process an input buffer instead of using the
+ *		   ESPARSER. Requires the format to have direct_input=1
  */
 struct amvdec_ops {
 	int (*start)(struct amvdec_session *sess);
 	int (*stop)(struct amvdec_session *sess);
 	void (*conf_esparser)(struct amvdec_session *sess);
 	u32 (*vififo_level)(struct amvdec_session *sess);
+	void (*process_input)(struct amvdec_session *sess, dma_addr_t start,
+			      u32 size);
 };
 
 /**
@@ -125,7 +129,10 @@ struct amvdec_ops {
  * @recycle: optional call to tell the codec to recycle a dst buffer. Must go
  *	     in pair with @can_recycle
  * @drain: optional call if the codec has a custom way of draining
- * @resume: optional call to resume after a resolution change
+ * @resume: optional call after a source change event and the capture queue
+ *	    has been reconfigured.
+ * @notify: optional call to notify the codec that an input is ready to be
+ *	    processed.
  * @eos_sequence: optional call to get an end sequence to send to esparser
  *		  for flush. Mutually exclusive with @drain.
  * @isr: mandatory call when the ISR triggers
@@ -140,7 +147,9 @@ struct amvdec_codec_ops {
 	int (*can_recycle)(struct amvdec_core *core);
 	void (*recycle)(struct amvdec_core *core, u32 buf_idx);
 	void (*drain)(struct amvdec_session *sess);
-	void (*resume)(struct amvdec_session *sess);
+	void (*resume)(struct amvdec_session *sess, int changed);
+	void (*notify)(struct amvdec_session *sess, int size);
+	u32 (*input_ready)(struct amvdec_session *sess);
 	const u8 * (*eos_sequence)(u32 *len);
 	irqreturn_t (*isr)(struct amvdec_session *sess);
 	irqreturn_t (*threaded_isr)(struct amvdec_session *sess);
@@ -162,6 +171,8 @@ struct amvdec_codec_ops {
  * @codec_ops: the codec operations that support this format
  * @firmware_path: Path to the firmware that supports this format
  * @pixfmts_cap: list of CAPTURE pixel formats available with pixfmt
+ * @direct_input: is able to decode input buffers directly rather than passing
+ * 		  them through the ESPARSER
  */
 struct amvdec_format {
 	u32 pixfmt;
@@ -176,6 +187,7 @@ struct amvdec_format {
 
 	char *firmware_path;
 	u32 pixfmts_cap[4];
+	u32 direct_input;
 };
 
 enum amvdec_status {
@@ -288,10 +300,12 @@ struct amvdec_session {
 	void *vififo_vaddr;
 	dma_addr_t vififo_paddr;
 	u32 vififo_size;
+	u32 offset;
 
 	struct list_head bufs_recycle;
 	struct mutex bufs_recycle_lock; /* bufs_recycle list lock */
 	struct task_struct *recycle_thread;
+	struct vb2_v4l2_buffer *cur_direct_input_vbuf;
 
 	struct list_head timestamps;
 	spinlock_t ts_spinlock; /* timestamp list lock */
@@ -299,7 +313,9 @@ struct amvdec_session {
 	u64 last_irq_jiffies;
 	u32 last_offset;
 	u32 wrap_count;
+
 	u32 fw_idx_to_vb2_idx[32];
+	u32 vb2_idx_to_fw_idx[32];
 
 	enum amvdec_status status;
 	void *priv;

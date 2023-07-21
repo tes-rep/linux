@@ -433,7 +433,7 @@ static int vdec_start_streaming(struct vb2_queue *q, unsigned int count)
 	if (sess->status == STATUS_NEEDS_RESUME &&
 	    q->type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE &&
 	    sess->changed_format) {
-		codec_ops->resume(sess);
+		codec_ops->resume(sess, 1);
 		sess->status = STATUS_RUNNING;
 		return 0;
 	}
@@ -669,23 +669,22 @@ vdec_try_fmt_common(struct amvdec_session *sess, u32 size,
 			pixmp->pixelformat = fmt_out->pixfmts_cap[0];
 
 		memset(pfmt[1].reserved, 0, sizeof(pfmt[1].reserved));
-		if (pixmp->pixelformat == V4L2_PIX_FMT_NV12) {
-			pfmt[0].sizeimage = output_size + output_size / 2;
-			pfmt[0].bytesperline = ALIGN(pixmp->width, 64);
-			pixmp->num_planes = 1;
-		} else if (pixmp->pixelformat == V4L2_PIX_FMT_NV12M) {
+		if (pixmp->pixelformat == V4L2_PIX_FMT_NV12M) {
 			pfmt[0].sizeimage = output_size;
-			pfmt[0].bytesperline = ALIGN(pixmp->width, 64);
+			pfmt[0].bytesperline = ALIGN(pixmp->width, 32);
+
 			pfmt[1].sizeimage = output_size / 2;
-			pfmt[1].bytesperline = ALIGN(pixmp->width, 64);
+			pfmt[1].bytesperline = ALIGN(pixmp->width, 32);
 			pixmp->num_planes = 2;
 		} else if (pixmp->pixelformat == V4L2_PIX_FMT_YUV420M) {
 			pfmt[0].sizeimage = output_size;
-			pfmt[0].bytesperline = ALIGN(pixmp->width, 64);
+			pfmt[0].bytesperline = ALIGN(pixmp->width, 32);
+
 			pfmt[1].sizeimage = output_size / 4;
-			pfmt[1].bytesperline = ALIGN(pixmp->width, 64) / 2;
-			pfmt[2].sizeimage = output_size / 4;
-			pfmt[2].bytesperline = ALIGN(pixmp->width, 64) / 2;
+			pfmt[1].bytesperline = ALIGN(pixmp->width, 32) / 2;
+
+			pfmt[2].sizeimage = output_size / 2;
+			pfmt[2].bytesperline = ALIGN(pixmp->width, 32) / 2;
 			pixmp->num_planes = 3;
 		} else if (pixmp->pixelformat == V4L2_PIX_FMT_AM21C) {
 			pfmt[0].sizeimage =
@@ -869,6 +868,10 @@ vdec_decoder_cmd(struct file *file, void *fh, struct v4l2_decoder_cmd *cmd)
 	int ret;
 
 	ret = v4l2_m2m_ioctl_try_decoder_cmd(file, fh, cmd);
+	if (ret)
+		return ret;
+
+	ret = v4l2_m2m_ioctl_decoder_cmd(file, fh, cmd);
 	if (ret)
 		return ret;
 
@@ -1103,7 +1106,6 @@ static int hevc_open(struct file *file)
 		return -ENOMEM;
 
 	sess->core = core;
-	XXX();
 
 	/*
 	sess->m2m_dev = v4l2_m2m_init(&vdec_m2m_ops);
@@ -1134,6 +1136,7 @@ static int hevc_open(struct file *file)
 		goto err_m2m_release;
 
 	INIT_LIST_HEAD(&sess->timestamps);
+	INIT_LIST_HEAD(&sess->bufs_recycle);
 	INIT_WORK(&sess->esparser_queue_work, esparser_queue_all_src);
 	mutex_init(&sess->lock);
 	mutex_init(&sess->bufs_recycle_lock);
@@ -1205,8 +1208,6 @@ static int hevc_request_validate(struct media_request *req)
 	struct media_request_object *obj;
 	struct amvdec_session *sess = NULL;
 	unsigned int count;
-
-	XXX();
 
 	list_for_each_entry(obj, &req->objects, list) {
 		struct vb2_buffer *vb;
@@ -1319,7 +1320,6 @@ static int vdec_probe(struct platform_device *pdev)
 		return -EPROBE_DEFER;
 
 	irq = platform_get_irq_byname(pdev, "vdec");
-	XXX("irq %d", irq);
 	if (irq < 0)
 		return irq;
 
