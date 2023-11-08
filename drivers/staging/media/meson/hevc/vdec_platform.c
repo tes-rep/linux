@@ -45,7 +45,6 @@ static const struct amvdec_format vdec_formats_gxl[] = {
 		.pixfmts_cap = { V4L2_PIX_FMT_NV12M, 0 },
 		.flags = V4L2_FMT_FLAG_COMPRESSED |
 			 V4L2_FMT_FLAG_DYN_RESOLUTION,
-		.direct_input = 1,
 	},
 	{
 		.pixfmt = V4L2_PIX_FMT_VP9,
