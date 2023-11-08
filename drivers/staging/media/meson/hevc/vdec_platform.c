@@ -24,8 +24,8 @@ static const struct amvdec_format vdec_formats_gxbb[] = {
 		.max_width = 1920,
 		.max_height = 1080,
 		.vdec_ops = &vdec_1_ops,
-		.codec_ops = &codec_h264_ops,
-		.firmware_path = "meson/vdec/gxbb_h264.bin",
+		.codec_ops = &codec_h264_multi_ops,
+		.firmware_path = "meson/vdec/gxbb_h264_multi.bin",
 		.pixfmts_cap = { V4L2_PIX_FMT_NV12M, 0 },
 		.flags = V4L2_FMT_FLAG_COMPRESSED |
 			 V4L2_FMT_FLAG_DYN_RESOLUTION,
