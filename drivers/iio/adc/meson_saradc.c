@@ -323,6 +323,7 @@ struct meson_sar_adc_param {
 	unsigned int				temperature_divider;
 	u8					disable_ring_counter;
 	bool					has_reg11;
+	bool					has_reg12;
 	bool					has_vref_select;
 	u8					vref_select;
 	u8					cmv_select;
@@ -1241,6 +1242,19 @@ static const struct meson_sar_adc_param meson_sar_adc_gxl_param = {
 	.cmv_select = 1,
 };
 
+static const struct meson_sar_adc_param meson_sar_adc_gxlx_param = {
+	.has_bl30_integration = true,
+	.clock_rate = 1200000,
+	.bandgap_reg = MESON_SAR_ADC_REG11,
+	.regmap_config = &meson_sar_adc_regmap_config_gxbb,
+	.resolution = 12,
+	.disable_ring_counter = 1,
+	.has_reg11 = true,
+	.has_reg12 = true,
+	.vref_volatge = 1,
+	.cmv_select = 1,
+};
+
 static const struct meson_sar_adc_param meson_sar_adc_axg_param = {
 	.has_bl30_integration = true,
 	.clock_rate = 1200000,
@@ -1293,6 +1307,11 @@ static const struct meson_sar_adc_data meson_sar_adc_gxl_data = {
 	.name = "meson-gxl-saradc",
 };
 
+static const struct meson_sar_adc_data meson_sar_adc_gxlx_data = {
+	.param = &meson_sar_adc_gxlx_param,
+	.name = "meson-gxlx-saradc",
+};
+
 static const struct meson_sar_adc_data meson_sar_adc_gxm_data = {
 	.param = &meson_sar_adc_gxl_param,
 	.name = "meson-gxm-saradc",
@@ -1323,6 +1342,9 @@ static const struct of_device_id meson_sar_adc_of_match[] = {
 		.data = &meson_sar_adc_gxbb_data,
 	}, {
 		.compatible = "amlogic,meson-gxl-saradc",
+		.data = &meson_sar_adc_gxl_data,
+	}, {
+		.compatible = "amlogic,meson-gxlx-saradc",
 		.data = &meson_sar_adc_gxl_data,
 	}, {
 		.compatible = "amlogic,meson-gxm-saradc",
@@ -1445,6 +1467,11 @@ static int meson_sar_adc_probe(struct platform_device *pdev)
 	if (ret) {
 		dev_err_probe(dev, ret, "failed to register iio device\n");
 		goto err_hw;
+	}
+
+	if (priv->param->has_reg12) {
+	        /* MESON_SAR_ADC_REG12 poke for audio on GXLX */
+		regmap_write(priv->regmap, 0x30, 0x3);
 	}
 
 	return 0;
