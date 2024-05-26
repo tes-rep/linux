@@ -96,3 +96,7 @@ dtb-$(CONFIG_ARCH_MESON) += meson-sm1-x96-air.dtb
 # Overlays
 meson-g12a-fbx8am-brcm-dtbs	:= meson-g12a-fbx8am.dtb meson-g12a-fbx8am-brcm.dtbo
 meson-g12a-fbx8am-realtek-dtbs	:= meson-g12a-fbx8am.dtb meson-g12a-fbx8am-realtek.dtbo
+
+# Experimental
+dtb-$(CONFIG_ARCH_MESON) += meson-gxbb-odroidc2-hifishield.dtb
+dtb-$(CONFIG_ARCH_MESON) += meson-gxbb-odroidc2-hifishield2.dtb
