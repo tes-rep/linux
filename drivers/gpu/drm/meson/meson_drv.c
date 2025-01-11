@@ -541,7 +541,7 @@ static int __maybe_unused meson_drv_pm_suspend(struct device *dev)
 
 	ret = drm_mode_config_helper_suspend(priv->drm);
 	if (unlikely(ret)) {
-		drm_err(dev, "suspend error: %d", ret);
+		dev_err(dev, "suspend error: %d", ret);
 		return ret;
 	}
 
