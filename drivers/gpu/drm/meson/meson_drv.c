@@ -213,7 +213,9 @@ static int meson_drv_bind_master(struct device *dev, bool has_components)
 	const struct meson_drm_match_data *match;
 	struct meson_drm *priv;
 	struct drm_device *drm;
+	bool do_unbind = false;
 	struct resource *res;
+	
 	void __iomem *regs;
 	int ret, i;
 
@@ -409,7 +411,6 @@ static int meson_drv_bind_master(struct device *dev, bool has_components)
 	}
 
 	/* Encoder Initialization */
-
 	ret = meson_encoder_cvbs_probe(priv);
 	if (ret)
 		goto exit_afbcd;
@@ -420,8 +421,9 @@ static int meson_drv_bind_master(struct device *dev, bool has_components)
 			dev_err(drm->dev, "Couldn't bind all components\n");
 			/* Do not try to unbind */
 			has_components = false;
-			goto cvbs_encoder_remove;
+			goto exit_afbcd;
 		}
+		do_unbind = true;
 	}
 
 	ret = meson_encoder_hdmi_probe(priv);
@@ -489,6 +491,13 @@ free_canvas_osd1:
 	meson_canvas_free(priv->canvas, priv->canvas_id_osd1);
 free_drm:
 	drm_dev_put(drm);
+
+	meson_encoder_dsi_remove(priv);
+	meson_encoder_hdmi_remove(priv);
+	meson_encoder_cvbs_remove(priv);
+
+	if (do_unbind)
+		component_unbind_all(dev, drm);
 
 	return ret;
 }
