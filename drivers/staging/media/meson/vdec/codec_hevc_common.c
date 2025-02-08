@@ -213,10 +213,11 @@ void codec_hevc_free_fbc_buffers(struct amvdec_session *sess,
 
 	use_mmu = codec_hevc_use_mmu(sess->core->platform->revision,
 				     sess->pixfmt_cap,
-				sess->bitdepth == 10 ? 1 : 0);
+				     sess->bitdepth == 10 ? 1 : 0);
 
 	am21_size = amvdec_amfbc_size(sess->width, sess->height,
-				      sess->bitdepth == 10 ? 1 : 0, use_mmu);
+				      sess->bitdepth == 10 ? 1 : 0,
+				      use_mmu);
 
 	for (i = 0; i < MAX_REF_PIC_NUM; ++i) {
 		if (comm->fbc_buffer_vaddr[i]) {
@@ -329,9 +330,11 @@ void codec_hevc_fill_mmu_map(struct amvdec_session *sess,
 	u32 i;
 
 	use_mmu = codec_hevc_use_mmu(sess->core->platform->revision,
-				     sess->pixfmt_cap, is_10bit);
+				     sess->pixfmt_cap,
+				     is_10bit);
 
-	size = amvdec_amfbc_size(sess->width, sess->height, is_10bit,
+	size = amvdec_amfbc_size(sess->width, sess->height,
+				 sess->bitdepth == 10 ? 1 : 0,
 				 use_mmu);
 
 	nb_pages = size / PAGE_SIZE;
