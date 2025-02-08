@@ -126,7 +126,7 @@ static void codec_hevc_setup_buffers_gxl(struct amvdec_session *sess,
 	struct amvdec_core *core = sess->core;
 	struct v4l2_m2m_buffer *buf;
 	u32 pixfmt_cap = sess->pixfmt_cap;
-	const u32 revision = core->platform->revision;
+	u32 revision = core->platform->revision;
 	int i;
 
 	amvdec_write_dos(core, HEVCD_MPP_ANC2AXI_TBL_CONF_ADDR,
@@ -333,8 +333,7 @@ void codec_hevc_fill_mmu_map(struct amvdec_session *sess,
 				     sess->pixfmt_cap,
 				     is_10bit);
 
-	size = amvdec_amfbc_size(sess->width, sess->height,
-				 sess->bitdepth == 10 ? 1 : 0,
+	size = amvdec_amfbc_size(sess->width, sess->height, is_10bit,
 				 use_mmu);
 
 	nb_pages = size / PAGE_SIZE;
