@@ -303,6 +303,26 @@ static void dst_buf_done(struct amvdec_session *sess,
 		vb2_set_plane_payload(&vbuf->vb2_buf, 1, output_size / 4);
 		vb2_set_plane_payload(&vbuf->vb2_buf, 2, output_size / 4);
 		break;
+	case V4L2_PIX_FMT_YUV420_8BIT:
+		if (sess->core->platform->revision >= VDEC_REVISION_G12A)
+			vb2_set_plane_payload(&vbuf->vb2_buf, 0,
+					      MMU_COMPRESS_HEADER_SIZE);
+		else
+			vb2_set_plane_payload(&vbuf->vb2_buf, 0,
+					      amvdec_amfbc_size(sess->width,
+								sess->height,
+								0, 0));
+		break;
+	case V4L2_PIX_FMT_YUV420_10BIT:
+		if (sess->core->platform->revision >= VDEC_REVISION_G12A)
+			vb2_set_plane_payload(&vbuf->vb2_buf, 0,
+					      MMU_COMPRESS_HEADER_SIZE);
+		else
+			vb2_set_plane_payload(&vbuf->vb2_buf, 0,
+					      amvdec_amfbc_size(sess->width,
+								sess->height,
+								1, 0));
+		break;
 	}
 
 	vbuf->vb2_buf.timestamp = timestamp;
@@ -485,6 +505,11 @@ void amvdec_src_change(struct amvdec_session *sess, u32 width,
 		sess->status = STATUS_NEEDS_RESUME;
 		sess->changed_format = 0;
 	}
+
+	if (sess->pixfmt_cap == V4L2_PIX_FMT_YUV420_8BIT & bitdepth == 10)
+		sess->pixfmt_cap = V4L2_PIX_FMT_YUV420_10BIT;
+	else if (sess->pixfmt_cap == V4L2_PIX_FMT_YUV420_10BIT && bitdepth == 8)
+		sess->pixfmt_cap = V4L2_PIX_FMT_YUV420_8BIT;
 
 	sess->width = width;
 	sess->height = height;
