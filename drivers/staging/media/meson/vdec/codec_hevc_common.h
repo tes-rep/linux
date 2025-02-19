@@ -34,6 +34,8 @@ static inline int codec_hevc_use_fbc(u32 pixfmt, int is_10bit)
 {
 	return pixfmt == V4L2_PIX_FMT_YUV420_8BIT ||
 	       pixfmt == V4L2_PIX_FMT_YUV420_10BIT ||
+	       pixfmt == V4L2_PIX_FMT_YUV420_8_AFBC_16X16_SPLIT ||
+	       pixfmt == V4L2_PIX_FMT_YUV420_10_AFBC_16X16_SPLIT ||
 	       is_10bit;
 }
 

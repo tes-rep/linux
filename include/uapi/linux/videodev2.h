@@ -820,6 +820,8 @@ struct v4l2_pix_format {
  */
 #define V4L2_PIX_FMT_YUV420_8BIT	v4l2_fourcc('Y', 'U', '0', '8') /* 1-plane YUV 4:2:0 8-bit */
 #define V4L2_PIX_FMT_YUV420_10BIT	v4l2_fourcc('Y', 'U', '1', '0') /* 1-plane YUV 4:2:0 10-bit */
+#define V4L2_PIX_FMT_YUV420_8_AFBC_16X16_SPLIT  v4l2_fourcc('A', 'S', '1', '2') /* YUV420 AFBC compressed, 16x16 macroblocks, split */
+#define V4L2_PIX_FMT_YUV420_10_AFBC_16X16_SPLIT v4l2_fourcc('A', 'S', '0', '1') /* YUV420 10-bit AFBC compressed, 16x16 macroblocks, split */
 
 /* 10bit raw packed, 32 bytes for every 25 pixels, last LSB 6 bits unused */
 #define V4L2_PIX_FMT_IPU3_SBGGR10	v4l2_fourcc('i', 'p', '3', 'b') /* IPU3 packed 10-bit BGGR bayer */

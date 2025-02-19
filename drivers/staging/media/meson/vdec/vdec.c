@@ -219,6 +219,8 @@ static int vdec_queue_setup(struct vb2_queue *q, unsigned int *num_buffers,
 				break;
 			case V4L2_PIX_FMT_YUV420_8BIT:
 			case V4L2_PIX_FMT_YUV420_10BIT:
+			case V4L2_PIX_FMT_YUV420_8_AFBC_16X16_SPLIT:
+			case V4L2_PIX_FMT_YUV420_10_AFBC_16X16_SPLIT:
 				if (*num_planes != 1 ||
 				    sizes[0] < MMU_COMPRESS_HEADER_SIZE)
 					return -EINVAL;
@@ -253,6 +255,7 @@ static int vdec_queue_setup(struct vb2_queue *q, unsigned int *num_buffers,
 			*num_planes = 3;
 			break;
 		case V4L2_PIX_FMT_YUV420_8BIT:
+		case V4L2_PIX_FMT_YUV420_8_AFBC_16X16_SPLIT:
 			if (revision >= VDEC_REVISION_G12A)
 				sizes[0] = MMU_COMPRESS_HEADER_SIZE;
 			else
@@ -262,6 +265,7 @@ static int vdec_queue_setup(struct vb2_queue *q, unsigned int *num_buffers,
 			*num_planes = 1;
 			break;
 		case V4L2_PIX_FMT_YUV420_10BIT:
+		case V4L2_PIX_FMT_YUV420_10_AFBC_16X16_SPLIT:
 			if (revision >= VDEC_REVISION_G12A)
 				sizes[0] = MMU_COMPRESS_HEADER_SIZE;
 			else
@@ -573,7 +577,8 @@ vdec_try_fmt_common(struct amvdec_session *sess, u32 size,
 			pfmt[2].sizeimage = output_size / 2;
 			pfmt[2].bytesperline = ALIGN(pixmp->width, 32) / 2;
 			pixmp->num_planes = 3;
-		} else if (pixmp->pixelformat == V4L2_PIX_FMT_YUV420_8BIT) {
+		} else if ((pixmp->pixelformat == V4L2_PIX_FMT_YUV420_8BIT) ||
+			   (pixmp->pixelformat == V4L2_PIX_FMT_YUV420_8_AFBC_16X16_SPLIT)) {
 			if (revision >= VDEC_REVISION_G12A) {
 				pfmt[0].sizeimage = MMU_COMPRESS_HEADER_SIZE;
 			} else {
@@ -583,7 +588,8 @@ vdec_try_fmt_common(struct amvdec_session *sess, u32 size,
 				pfmt[0].bytesperline = pixmp->width;
 			}
 			pixmp->num_planes = 1;
-		} else if (pixmp->pixelformat == V4L2_PIX_FMT_YUV420_10BIT) {
+		} else if ((pixmp->pixelformat == V4L2_PIX_FMT_YUV420_10BIT) ||
+			   (pixmp->pixelformat == V4L2_PIX_FMT_YUV420_10_AFBC_16X16_SPLIT)) {
 			if (revision >= VDEC_REVISION_G12A) {
 				pfmt[0].sizeimage = MMU_COMPRESS_HEADER_SIZE;
 			} else {
