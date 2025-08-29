@@ -65,7 +65,7 @@
 	sound {
 		compatible = "simple-audio-card";
 		simple-audio-card,format = "i2s";
-		simple-audio-card,name = "rockchip,rt5616-codec";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,mclk-fs = <512>;
 		simple-audio-card,widgets =
 			"Microphone", "Microphone Jack",
