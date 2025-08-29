@@ -123,7 +123,7 @@
 
 	rt5640-sound {
 		compatible = "simple-audio-card";
-		simple-audio-card,name = "rockchip,rt5640-codec";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,format = "i2s";
 		simple-audio-card,mclk-fs = <256>;
 		simple-audio-card,widgets =

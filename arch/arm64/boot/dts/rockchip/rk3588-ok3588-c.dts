@@ -71,7 +71,7 @@
 		compatible = "simple-audio-card";
 		pinctrl-names = "default";
 		pinctrl-0 = <&hp_detect>;
-		simple-audio-card,name = "RK3588 OK3588-C Audio";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,bitclock-master = <&masterdai>;
 		simple-audio-card,format = "i2s";
 		simple-audio-card,frame-master = <&masterdai>;

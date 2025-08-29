@@ -39,7 +39,7 @@
 	/* Channels reversed for both headphones and speakers. */
 	sound {
 		compatible = "simple-audio-card";
-		simple-audio-card,name = "rk817_ext";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,aux-devs = <&spk_amp>;
 		simple-audio-card,format = "i2s";
 		simple-audio-card,hp-det-gpios = <&gpio4 RK_PC6 GPIO_ACTIVE_HIGH>;

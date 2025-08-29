@@ -60,7 +60,7 @@
 		compatible = "simple-audio-card";
 		simple-audio-card,format = "i2s";
 		simple-audio-card,mclk-fs = <256>;
-		simple-audio-card,name = "On-board Analog ES8388";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,widgets = "Microphone", "Headphone Mic",
 					    "Microphone", "Mic Pads",
 					    "Headphone", "Headphone",

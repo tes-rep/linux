@@ -124,7 +124,7 @@
 		simple-audio-card,frame-master = <&masterdai>;
 		simple-audio-card,hp-det-gpios = <&gpio3 RK_PA6 GPIO_ACTIVE_LOW>;
 		simple-audio-card,mclk-fs = <256>;
-		simple-audio-card,name = "rockchip,es8388-codec";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,pin-switches = "Headphones", "Speaker";
 		simple-audio-card,routing =
 			"Speaker Amplifier INL", "LOUT2",

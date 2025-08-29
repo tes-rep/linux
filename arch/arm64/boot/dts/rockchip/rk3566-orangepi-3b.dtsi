@@ -115,7 +115,7 @@
 	sound {
 		compatible = "simple-audio-card";
 		simple-audio-card,format = "i2s";
-		simple-audio-card,name = "Analog RK809";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,mclk-fs = <256>;
 
 		simple-audio-card,cpu {

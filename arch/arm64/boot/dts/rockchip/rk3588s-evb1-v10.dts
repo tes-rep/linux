@@ -78,7 +78,7 @@
 		compatible = "simple-audio-card";
 		pinctrl-names = "default";
 		pinctrl-0 = <&hp_detect>;
-		simple-audio-card,name = "RK3588 EVB1 Audio";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,aux-devs = <&amp_headphone>, <&amp_speaker>;
 		simple-audio-card,bitclock-master = <&masterdai>;
 		simple-audio-card,format = "i2s";

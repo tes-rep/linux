@@ -57,7 +57,7 @@
 	rk809-sound {
 		compatible = "simple-audio-card";
 		simple-audio-card,format = "i2s";
-		simple-audio-card,name = "STATION-M2-FRONT";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,mclk-fs = <256>;
 		status = "okay";
 

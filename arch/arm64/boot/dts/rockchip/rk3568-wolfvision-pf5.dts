@@ -59,7 +59,7 @@
 
 	pdm_sound: pdm-sound {
 		compatible = "simple-audio-card";
-		simple-audio-card,name = "microphone";
+		simple-audio-card,name = "Analog";
 
 		simple-audio-card,cpu {
 			sound-dai = <&pdm>;

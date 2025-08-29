@@ -94,7 +94,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&hp_det>;
 
-		simple-audio-card,name = "realtek,rt5616-codec";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,format = "i2s";
 		simple-audio-card,mclk-fs = <256>;
 

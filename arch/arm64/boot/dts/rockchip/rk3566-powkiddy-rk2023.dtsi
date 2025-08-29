@@ -277,7 +277,7 @@
 	 */
 	sound {
 		compatible = "simple-audio-card";
-		simple-audio-card,name = "rk817_ext";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,format = "i2s";
 		simple-audio-card,mclk-fs = <256>;
 		simple-audio-card,widgets =

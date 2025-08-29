@@ -79,7 +79,7 @@
 };
 
 &analog_sound {
-	simple-audio-card,name = "Analog A/V";
+	simple-audio-card,name = "Analog";
 	status = "okay";
 };
 

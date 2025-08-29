@@ -85,7 +85,7 @@
 
 	sound {
 		compatible = "simple-audio-card";
-		simple-audio-card,name = "PineNote";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,aux-devs = <&spk_amp>;
 		simple-audio-card,widgets = "Headphone", "Headphones",
 					    "Speaker", "Internal Speakers";

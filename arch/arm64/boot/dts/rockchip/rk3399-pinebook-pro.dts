@@ -133,7 +133,7 @@
 		compatible = "simple-audio-card";
 		pinctrl-names = "default";
 		pinctrl-0 = <&hp_det_pin>;
-		simple-audio-card,name = "rockchip,es8316-codec";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,format = "i2s";
 		simple-audio-card,mclk-fs = <256>;
 

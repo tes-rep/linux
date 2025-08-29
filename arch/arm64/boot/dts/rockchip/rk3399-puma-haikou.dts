@@ -70,7 +70,7 @@
 	i2s0-sound {
 		compatible = "simple-audio-card";
 		simple-audio-card,format = "i2s";
-		simple-audio-card,name = "Haikou,I2S-codec";
+		simple-audio-card,name = "Analog";
 		simple-audio-card,mclk-fs = <512>;
 
 		simple-audio-card,codec {
