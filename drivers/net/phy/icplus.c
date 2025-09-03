@@ -26,7 +26,7 @@
 #include <asm/irq.h>
 #include <linux/uaccess.h>
 
-MODULE_DESCRIPTION("ICPlus IP175C/IP101A/IP101G/IC1001 PHY drivers");
+MODULE_DESCRIPTION("ICPlus IP175C/IP101A/IP101G/IP1001/IP1001C PHY drivers");
 MODULE_AUTHOR("Michael Barkowski");
 MODULE_LICENSE("GPL");
 
@@ -64,6 +64,9 @@ MODULE_LICENSE("GPL");
 
 #define IP175C_PHY_ID 0x02430d80
 #define IP1001_PHY_ID 0x02430d90
+#define IP1001_PHY_ID_ALT 0x02430d91 // Additional identifier for IP1001
+#define IP1001C_PHY_ID 0x02430d98    // New: IP1001C identifier
+
 #define IP101A_PHY_ID 0x02430c54
 
 /* The 32-pin IP101GR package can re-configure the mode of the RXER/INTR_32 pin
@@ -178,6 +181,52 @@ static int ip1001_config_init(struct phy_device *phydev)
 		if (c < 0)
 			return c;
 	}
+
+	return 0;
+}
+
+/* IP1001C specific config_init */
+static int ip1001c_config_init(struct phy_device *phydev)
+{
+	int val, ret;
+
+	/* Enable Auto Power Saving mode (same as IP1001) */
+	val = phy_read(phydev, IP1001_SPEC_CTRL_STATUS_2);
+	if (val < 0)
+		return val;
+	val |= IP1001_APS_ON;
+	ret = phy_write(phydev, IP1001_SPEC_CTRL_STATUS_2, val);
+	if (ret < 0)
+		return ret;
+
+	/* RGMII delay settings, similar to IP1001, if required for IP1001C */
+	if (phy_interface_is_rgmii(phydev)) {
+		val = phy_read(phydev, IP10XX_SPEC_CTRL_STATUS);
+		if (val < 0)
+			return val;
+
+		val &= ~(IP1001_RXPHASE_SEL | IP1001_TXPHASE_SEL);
+
+		if (phydev->interface == PHY_INTERFACE_MODE_RGMII_ID)
+			val |= (IP1001_RXPHASE_SEL | IP1001_TXPHASE_SEL);
+		else if (phydev->interface == PHY_INTERFACE_MODE_RGMII_RXID)
+			val |= IP1001_RXPHASE_SEL;
+		else if (phydev->interface == PHY_INTERFACE_MODE_RGMII_TXID)
+			val |= IP1001_TXPHASE_SEL;
+
+		ret = phy_write(phydev, IP10XX_SPEC_CTRL_STATUS, val);
+		if (ret < 0)
+			return ret;
+	}
+
+	/* IP1001C specific workaround: force 1000M/Master/Full-Duplex */
+	ret = phy_write(phydev, MII_BMCR, 0x0140); /* Full Duplex */
+	if (ret < 0)
+		return ret;
+
+	ret = phy_write(phydev, MII_CTRL1000, 0x1800); /* 1000M Master */
+	if (ret < 0)
+		return ret;
 
 	return 0;
 }
@@ -591,6 +640,22 @@ static struct phy_driver icplus_driver[] = {
 	.suspend	= genphy_suspend,
 	.resume		= genphy_resume,
 }, {
+	PHY_ID_MATCH_MODEL(IP1001_PHY_ID_ALT),
+	.name		= "ICPlus IP1001",
+	/* PHY_GBIT_FEATURES */
+	.config_init	= ip1001_config_init,
+	.soft_reset	= genphy_soft_reset,
+	.suspend	= genphy_suspend,
+	.resume		= genphy_resume,
+}, {
+	PHY_ID_MATCH_MODEL(IP1001C_PHY_ID),
+	.name		= "ICPlus IP1001C",
+	/* PHY_GBIT_FEATURES */
+	.config_init	= ip1001c_config_init,
+	.soft_reset	= genphy_soft_reset,
+	.suspend	= genphy_suspend,
+	.resume		= genphy_resume,
+}, {
 	.name		= "ICPlus IP101A",
 	.match_phy_device = ip101a_match_phy_device,
 	.probe		= ip101a_g_probe,
@@ -628,6 +693,8 @@ module_phy_driver(icplus_driver);
 static const struct mdio_device_id __maybe_unused icplus_tbl[] = {
 	{ PHY_ID_MATCH_MODEL(IP175C_PHY_ID) },
 	{ PHY_ID_MATCH_MODEL(IP1001_PHY_ID) },
+	{ PHY_ID_MATCH_MODEL(IP1001_PHY_ID_ALT) },
+	{ PHY_ID_MATCH_MODEL(IP1001C_PHY_ID) },
 	{ PHY_ID_MATCH_EXACT(IP101A_PHY_ID) },
 	{ }
 };
