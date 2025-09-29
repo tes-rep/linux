@@ -29,6 +29,8 @@
 		#size-cells = <2>;
 		ranges;
 
+		kaslr-seed = <0x00000000 0x10000000>;
+
 		simplefb_cvbs: framebuffer-cvbs {
 			compatible = "amlogic,simple-framebuffer",
 				     "simple-framebuffer";
