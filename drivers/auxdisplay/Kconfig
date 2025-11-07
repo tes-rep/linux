@@ -549,3 +549,10 @@ config PANEL
 	depends on PARPORT
 	select AUXDISPLAY
 	select PARPORT_PANEL
+
+config FD6551
+	tristate "FD6551 driver for LED 7 segment displays"
+	depends on I2C_GPIO
+	depends on OF || COMPILE_TEST
+	help
+	  Say Y to enable support for FD6551
