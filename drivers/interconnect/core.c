@@ -21,6 +21,9 @@
 
 #include "internal.h"
 
+#define CREATE_TRACE_POINTS
+#include "trace.h"
+
 static DEFINE_IDR(icc_idr);
 static LIST_HEAD(icc_providers);
 static DEFINE_MUTEX(icc_lock);
@@ -91,7 +94,6 @@ static struct icc_path *path_init(struct device *dev, struct icc_node *dst,
 		hlist_add_head(&path->reqs[i].req_node, &node->req_list);
 		path->reqs[i].node = node;
 		path->reqs[i].dev = dev;
-		path->reqs[i].enabled = true;
 		/* reference to previous node was saved during path traversal */
 		node = node->reverse;
 	}
@@ -176,7 +178,6 @@ static int aggregate_requests(struct icc_node *node)
 {
 	struct icc_provider *p = node->provider;
 	struct icc_req *r;
-	u32 avg_bw, peak_bw;
 
 	node->avg_bw = 0;
 	node->peak_bw = 0;
@@ -184,17 +185,9 @@ static int aggregate_requests(struct icc_node *node)
 	if (p->pre_aggregate)
 		p->pre_aggregate(node);
 
-	hlist_for_each_entry(r, &node->req_list, req_node) {
-		if (r->enabled) {
-			avg_bw = r->avg_bw;
-			peak_bw = r->peak_bw;
-		} else {
-			avg_bw = 0;
-			peak_bw = 0;
-		}
-		p->aggregate(node, r->tag, avg_bw, peak_bw,
+	hlist_for_each_entry(r, &node->req_list, req_node)
+		p->aggregate(node, r->tag, r->avg_bw, r->peak_bw,
 			     &node->avg_bw, &node->peak_bw);
-	}
 
 	return 0;
 }
@@ -369,9 +362,22 @@ struct icc_path *of_icc_get(struct device *dev, const char *name)
 
 	mutex_lock(&icc_lock);
 	path = path_find(dev, src_node, dst_node);
-	if (IS_ERR(path))
-		dev_err(dev, "%s: invalid path=%ld\n", __func__, PTR_ERR(path));
 	mutex_unlock(&icc_lock);
+	if (IS_ERR(path)) {
+		dev_err(dev, "%s: invalid path=%ld\n", __func__, PTR_ERR(path));
+		return path;
+	}
+
+	if (name)
+		path->name = kstrdup_const(name, GFP_KERNEL);
+	else
+		path->name = kasprintf(GFP_KERNEL, "%s-%s",
+				       src_node->name, dst_node->name);
+
+	if (!path->name) {
+		kfree(path);
+		return ERR_PTR(-ENOMEM);
+	}
 
 	return path;
 }
@@ -440,6 +446,8 @@ int icc_set_bw(struct icc_path *path, u32 avg_bw, u32 peak_bw)
 
 		/* aggregate requests for this node */
 		aggregate_requests(node);
+
+		trace_icc_set_bw(path, node, i, avg_bw, peak_bw);
 	}
 
 	ret = apply_constraints(path);
@@ -458,42 +466,11 @@ int icc_set_bw(struct icc_path *path, u32 avg_bw, u32 peak_bw)
 
 	mutex_unlock(&icc_lock);
 
+	trace_icc_set_bw_end(path, ret);
+
 	return ret;
 }
 EXPORT_SYMBOL_GPL(icc_set_bw);
-
-static int __icc_enable(struct icc_path *path, bool enable)
-{
-	int i;
-
-	if (!path)
-		return 0;
-
-	if (WARN_ON(IS_ERR(path) || !path->num_nodes))
-		return -EINVAL;
-
-	mutex_lock(&icc_lock);
-
-	for (i = 0; i < path->num_nodes; i++)
-		path->reqs[i].enabled = enable;
-
-	mutex_unlock(&icc_lock);
-
-	return icc_set_bw(path, path->reqs[0].avg_bw,
-			  path->reqs[0].peak_bw);
-}
-
-int icc_enable(struct icc_path *path)
-{
-	return __icc_enable(path, true);
-}
-EXPORT_SYMBOL_GPL(icc_enable);
-
-int icc_disable(struct icc_path *path)
-{
-	return __icc_enable(path, false);
-}
-EXPORT_SYMBOL_GPL(icc_disable);
 
 /**
  * icc_get() - return a handle for path between two endpoints
@@ -527,9 +504,16 @@ struct icc_path *icc_get(struct device *dev, const int src_id, const int dst_id)
 		goto out;
 
 	path = path_find(dev, src, dst);
-	if (IS_ERR(path))
+	if (IS_ERR(path)) {
 		dev_err(dev, "%s: invalid path=%ld\n", __func__, PTR_ERR(path));
+		goto out;
+	}
 
+	path->name = kasprintf(GFP_KERNEL, "%s-%s", src->name, dst->name);
+	if (!path->name) {
+		kfree(path);
+		path = ERR_PTR(-ENOMEM);
+	}
 out:
 	mutex_unlock(&icc_lock);
 	return path;
@@ -565,6 +549,7 @@ void icc_put(struct icc_path *path)
 	}
 	mutex_unlock(&icc_lock);
 
+	kfree_const(path->name);
 	kfree(path);
 }
 EXPORT_SYMBOL_GPL(icc_put);

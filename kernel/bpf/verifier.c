@@ -2687,7 +2687,7 @@ continue_func:
 	goto continue_func;
 }
 
-#ifndef CONFIG_BPF_JIT_ALWAYS_ON
+#ifndef CONFIG_BPF_JIT_ALWAYS_ON_AMLOGIC
 static int get_callee_stack_depth(struct bpf_verifier_env *env,
 				  const struct bpf_insn *insn, int idx)
 {
@@ -9166,7 +9166,7 @@ out_undo_insn:
 
 static int fixup_call_args(struct bpf_verifier_env *env)
 {
-#ifndef CONFIG_BPF_JIT_ALWAYS_ON
+#ifndef CONFIG_BPF_JIT_ALWAYS_ON_AMLOGIC
 	struct bpf_prog *prog = env->prog;
 	struct bpf_insn *insn = prog->insnsi;
 	int i, depth;
@@ -9181,7 +9181,7 @@ static int fixup_call_args(struct bpf_verifier_env *env)
 		if (err == -EFAULT)
 			return err;
 	}
-#ifndef CONFIG_BPF_JIT_ALWAYS_ON
+#ifndef CONFIG_BPF_JIT_ALWAYS_ON_AMLOGIC
 	for (i = 0; i < prog->len; i++, insn++) {
 		if (insn->code != (BPF_JMP | BPF_CALL) ||
 		    insn->src_reg != BPF_PSEUDO_CALL)
@@ -9685,8 +9685,14 @@ skip_full_check:
 	env->verification_time = ktime_get_ns() - start_time;
 	print_verification_stats(env);
 
-	if (log->level && bpf_verifier_log_full(log))
-		ret = -ENOSPC;
+	// ANDROID: Do not fail to load if log buffer passed in from userspace
+	// is too small. The bpf log logic is refactored in the 6.4 kernel
+	// acknowledging the shortcomings of this approch. Instead of backporting
+	// the significant changes, simply ignore the fact that the log is full.
+	// For more information see commit 121664093803: bpf: Switch BPF verifier
+	// log to be a rotating log by default
+	//if (log->level && bpf_verifier_log_full(log))
+	//	ret = -ENOSPC;
 	if (log->level && !log->ubuf) {
 		ret = -EFAULT;
 		goto err_release_maps;

@@ -289,6 +289,9 @@ int ip_tunnel_newlink(struct net_device *dev, struct nlattr *tb[],
 		      struct ip_tunnel_parm *p, __u32 fwmark);
 void ip_tunnel_setup(struct net_device *dev, unsigned int net_id);
 
+extern const struct header_ops ip_tunnel_header_ops;
+__be16 ip_tunnel_parse_protocol(const struct sk_buff *skb);
+
 struct ip_tunnel_encap_ops {
 	size_t (*encap_hlen)(struct ip_tunnel_encap *e);
 	int (*build_header)(struct sk_buff *skb, struct ip_tunnel_encap *e,
@@ -497,14 +500,15 @@ static inline void iptunnel_xmit_stats(struct net_device *dev, int pkt_len)
 		tstats->tx_packets++;
 		u64_stats_update_end(&tstats->syncp);
 		put_cpu_ptr(tstats);
-		return;
-	}
-
-	if (pkt_len < 0) {
-		DEV_STATS_INC(dev, tx_errors);
-		DEV_STATS_INC(dev, tx_aborted_errors);
 	} else {
-		DEV_STATS_INC(dev, tx_dropped);
+		struct net_device_stats *err_stats = &dev->stats;
+
+		if (pkt_len < 0) {
+			err_stats->tx_errors++;
+			err_stats->tx_aborted_errors++;
+		} else {
+			err_stats->tx_dropped++;
+		}
 	}
 }
 

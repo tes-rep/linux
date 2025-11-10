@@ -18,6 +18,7 @@
 #include <linux/sched/mm.h>
 #include <linux/list.h>
 #include <linux/slab.h>
+#include <linux/kcov.h>
 #include <linux/ioctl.h>
 #include <linux/usb.h>
 #include <linux/usbdevice_fs.h>
@@ -32,6 +33,10 @@
 
 #include <linux/uaccess.h>
 #include <asm/byteorder.h>
+
+#ifdef CONFIG_AMLOGIC_USB
+#include <linux/amlogic/usb-v2.h>
+#endif
 
 #include "hub.h"
 #include "otg_whitelist.h"
@@ -51,6 +56,10 @@
 #define USB_TP_TRANSMISSION_DELAY_MAX	65535	/* ns */
 #define USB_PING_RESPONSE_TIME		400	/* ns */
 
+#ifdef CONFIG_AMLOGIC_USB
+static char *device_enum_fail[2]    = {
+"USB_DEVICE_STATE=Device no response", NULL };
+#endif
 /*
  * Give SS hubs 200ms time after wake to train downstream links before
  * assuming no port activity and allowing hub to runtime suspend back.
@@ -2248,6 +2257,9 @@ void usb_disconnect(struct usb_device **pdev)
 	struct usb_device *udev = *pdev;
 	struct usb_hub *hub = NULL;
 	int port1 = 1;
+#ifdef CONFIG_AMLOGIC_USB
+	struct usb_hcd *hcd = bus_to_hcd(udev->bus);
+#endif
 
 	/* mark the device as inactive, so any further urb submissions for
 	 * this device (and any of its children) will fail immediately.
@@ -2256,7 +2268,10 @@ void usb_disconnect(struct usb_device **pdev)
 	usb_set_device_state(udev, USB_STATE_NOTATTACHED);
 	dev_info(&udev->dev, "USB disconnect, device number %d\n",
 			udev->devnum);
-
+#ifdef CONFIG_AMLOGIC_USB
+	if (udev->portnum > 0 && udev->level == 1)
+		usb_phy_trim_tuning(hcd->usb_phy, udev->portnum - 1, 1);
+#endif
 	/*
 	 * Ensure that the pm runtime code knows that the USB device
 	 * is in the process of being disconnected.
@@ -4488,8 +4503,10 @@ static int hub_port_disable(struct usb_hub *hub, int port1, int set_state)
 	}
 	if (port_dev->child && set_state)
 		usb_set_device_state(port_dev->child, USB_STATE_NOTATTACHED);
+#ifndef CONFIG_AMLOGIC_USB
 	if (ret && ret != -ENODEV)
 		dev_err(&port_dev->dev, "cannot disable (err = %d)\n", ret);
+#endif
 	return ret;
 }
 
@@ -4592,7 +4609,7 @@ static int hub_set_address(struct usb_device *udev, int devnum)
 	if (udev->state != USB_STATE_DEFAULT)
 		return -EINVAL;
 	if (hcd->driver->address_device)
-		retval = hcd->driver->address_device(hcd, udev, USB_CTRL_SET_TIMEOUT);
+		retval = hcd->driver->address_device(hcd, udev);
 	else
 		retval = usb_control_msg(udev, usb_sndaddr0pipe(),
 				USB_REQ_SET_ADDRESS, 0, devnum, 0,
@@ -4855,6 +4872,10 @@ hub_port_init(struct usb_hub *hub, struct usb_device *udev, int port1,
 				if (r != -ENODEV)
 					dev_err(&udev->dev, "device descriptor read/64, error %d\n",
 							r);
+#ifdef CONFIG_AMLOGIC_USB
+				if (-ETIMEDOUT == r)
+					dev_err(&udev->dev, "Device no response\n");
+#endif
 				retval = -EMSGSIZE;
 				continue;
 			}
@@ -5271,12 +5292,31 @@ static void hub_port_connect(struct usb_hub *hub, int port1, u16 portstatus,
 		status = hub_power_remaining(hub);
 		if (status)
 			dev_dbg(hub->intfdev, "%dmA power budget left\n", status);
-
 		return;
 
 loop_disable:
 		hub_port_disable(hub, port1, 1);
 loop:
+#ifdef CONFIG_AMLOGIC_USB
+	if (SET_CONFIG_TRIES == (i + 1)) {
+		struct kobject *kobj;
+
+		kobj = &udev->parent->dev.kobj;
+		if (kobj) {
+			udev->dev.kobj.parent = kobj;
+			dev_info(&udev->dev,
+				 "the parent's name is %s\n", kobj->name);
+		}
+		kobject_uevent_env(&udev->dev.kobj,
+				   KOBJ_CHANGE, device_enum_fail);
+		dev_err(&port_dev->dev,
+			"Device no response\n");
+		if (hdev->level == 0)
+			usb_phy_trim_tuning(hcd->usb_phy, port1 - 1, 1);
+	}
+	if (SET_CONFIG_TRIES == (i + 2) && hdev->level == 0)
+		usb_phy_trim_tuning(hcd->usb_phy, port1 - 1, 0);
+#endif
 		usb_ep0_reinit(udev);
 		release_devnum(udev);
 		hub_free_dev(udev);
@@ -5550,6 +5590,8 @@ static void hub_event(struct work_struct *work)
 	hub_dev = hub->intfdev;
 	intf = to_usb_interface(hub_dev);
 
+	kcov_remote_start_usb((u64)hdev->bus->busnum);
+
 	dev_dbg(hub_dev, "state %d ports %d chg %04x evt %04x\n",
 			hdev->state, hdev->maxchild,
 			/* NOTE: expects max 15 ports... */
@@ -5656,6 +5698,8 @@ out_hdev_lock:
 	/* Balance the stuff in kick_hub_wq() and allow autosuspend */
 	usb_autopm_put_interface(intf);
 	kref_put(&hub->kref, hub_release);
+
+	kcov_remote_stop();
 }
 
 static const struct usb_device_id hub_id_table[] = {
@@ -5804,8 +5848,14 @@ static int descriptors_changed(struct usb_device *udev,
 			changed = 1;
 			break;
 		}
+#ifdef CONFIG_AMLOGIC_USB
 		if (memcmp(buf, udev->rawdescriptors[index], old_length)
-				!= 0) {
+				!= 0 && !bt_intep_is_blacklist(udev))
+#else
+		if (memcmp(buf, udev->rawdescriptors[index], old_length)
+				!= 0)
+#endif
+		{
 			dev_dbg(&udev->dev, "config index %d changed (#%d)\n",
 				index,
 				((struct usb_config_descriptor *) buf)->
@@ -6034,11 +6084,6 @@ re_enumerate_no_bos:
  * the reset is over (using their post_reset method).
  *
  * Return: The same as for usb_reset_and_verify_device().
- * However, if a reset is already in progress (for instance, if a
- * driver doesn't have pre_reset() or post_reset() callbacks, and while
- * being unbound or re-bound during the ongoing reset its disconnect()
- * or probe() routine tries to perform a second, nested reset), the
- * routine returns -EINPROGRESS.
  *
  * Note:
  * The caller must own the device lock.  For example, it's safe to use
@@ -6071,10 +6116,6 @@ int usb_reset_device(struct usb_device *udev)
 		dev_dbg(&udev->dev, "%s for root hub!\n", __func__);
 		return -EISDIR;
 	}
-
-	if (udev->reset_in_progress)
-		return -EINPROGRESS;
-	udev->reset_in_progress = 1;
 
 	port_dev = hub->ports[udev->portnum - 1];
 
@@ -6140,7 +6181,6 @@ int usb_reset_device(struct usb_device *udev)
 
 	usb_autosuspend_device(udev);
 	memalloc_noio_restore(noio_flag);
-	udev->reset_in_progress = 0;
 	return ret;
 }
 EXPORT_SYMBOL_GPL(usb_reset_device);

@@ -16,6 +16,7 @@
 #include <linux/cdev.h>
 #include <linux/mutex.h>
 #include <linux/videodev2.h>
+#include <linux/android_kabi.h>
 
 #include <media/media-entity.h>
 
@@ -24,8 +25,7 @@
 /**
  * enum vfl_devnode_type - type of V4L2 device node
  *
- * @VFL_TYPE_VIDEO:	for video input/output devices
- * @VFL_TYPE_GRABBER:	deprecated, same as VFL_TYPE_VIDEO
+ * @VFL_TYPE_GRABBER:	for video input/output devices
  * @VFL_TYPE_VBI:	for vertical blank data (i.e. closed captions, teletext)
  * @VFL_TYPE_RADIO:	for radio tuners
  * @VFL_TYPE_SUBDEV:	for V4L2 subdevices
@@ -34,8 +34,7 @@
  * @VFL_TYPE_MAX:	number of VFL types, must always be last in the enum
  */
 enum vfl_devnode_type {
-	VFL_TYPE_VIDEO,
-	VFL_TYPE_GRABBER = VFL_TYPE_VIDEO,
+	VFL_TYPE_GRABBER	= 0,
 	VFL_TYPE_VBI,
 	VFL_TYPE_RADIO,
 	VFL_TYPE_SUBDEV,
@@ -206,6 +205,8 @@ struct v4l2_file_operations {
 	int (*mmap) (struct file *, struct vm_area_struct *);
 	int (*open) (struct file *);
 	int (*release) (struct file *);
+
+	ANDROID_KABI_RESERVE(1);
 };
 
 /*
@@ -302,6 +303,9 @@ struct video_device
 	DECLARE_BITMAP(valid_ioctls, BASE_VIDIOC_PRIVATE);
 
 	struct mutex *lock;
+
+	ANDROID_KABI_RESERVE(1);
+	ANDROID_KABI_RESERVE(2);
 };
 
 /**

@@ -180,6 +180,9 @@ struct plat_stmmacenet_data {
 	bool en_tx_lpi_clockgating;
 	bool rx_clk_runs_in_lpi;
 	int has_xgmac;
+#ifdef CONFIG_AMLOGIC_ETH_PRIVE
+	int mdns_wkup;
+#endif
 	bool sph_disable;
 };
 #endif

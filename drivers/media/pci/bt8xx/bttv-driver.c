@@ -2964,7 +2964,7 @@ static int bttv_open(struct file *file)
 
 	dprintk("open dev=%s\n", video_device_node_name(vdev));
 
-	if (vdev->vfl_type == VFL_TYPE_VIDEO) {
+	if (vdev->vfl_type == VFL_TYPE_GRABBER) {
 		type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	} else if (vdev->vfl_type == VFL_TYPE_VBI) {
 		type = V4L2_BUF_TYPE_VBI_CAPTURE;
@@ -3187,7 +3187,7 @@ static int radio_release(struct file *file)
 
 	btv->radio_user--;
 
-	bttv_call_all(btv, core, command, SAA6588_CMD_CLOSE, &cmd);
+	bttv_call_all(btv, core, ioctl, SAA6588_CMD_CLOSE, &cmd);
 
 	if (btv->radio_user == 0)
 		btv->has_radio_tuner = 0;
@@ -3268,7 +3268,7 @@ static ssize_t radio_read(struct file *file, char __user *data,
 	cmd.result = -ENODEV;
 	radio_enable(btv);
 
-	bttv_call_all(btv, core, command, SAA6588_CMD_READ, &cmd);
+	bttv_call_all(btv, core, ioctl, SAA6588_CMD_READ, &cmd);
 
 	return cmd.result;
 }
@@ -3289,7 +3289,7 @@ static __poll_t radio_poll(struct file *file, poll_table *wait)
 	cmd.instance = file;
 	cmd.event_list = wait;
 	cmd.poll_mask = res;
-	bttv_call_all(btv, core, command, SAA6588_CMD_POLL, &cmd);
+	bttv_call_all(btv, core, ioctl, SAA6588_CMD_POLL, &cmd);
 
 	return cmd.poll_mask;
 }
@@ -3905,7 +3905,7 @@ static int bttv_register_video(struct bttv *btv)
 	if (no_overlay <= 0)
 		btv->video_dev.device_caps |= V4L2_CAP_VIDEO_OVERLAY;
 
-	if (video_register_device(&btv->video_dev, VFL_TYPE_VIDEO,
+	if (video_register_device(&btv->video_dev, VFL_TYPE_GRABBER,
 				  video_nr[btv->c.nr]) < 0)
 		goto err;
 	pr_info("%d: registered device %s\n",

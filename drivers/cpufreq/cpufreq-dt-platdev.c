@@ -140,7 +140,12 @@ static const struct of_device_id blacklist[] __initconst = {
 	{ .compatible = "ti,am33xx", },
 	{ .compatible = "ti,am43", },
 	{ .compatible = "ti,dra7", },
-
+	{ .compatible = "amlogic, sc2", },
+	{ .compatible = "amlogic,tm2", },
+	{ .compatible = "amlogic,t5d", },
+	{ .compatible = "amlogic, t7", },
+	{ .compatible = "amlogic, s4", },
+	{ .compatible = "amlogic, t3", },
 	{ }
 };
 
@@ -183,4 +188,4 @@ create_pdev:
 			       -1, data,
 			       sizeof(struct cpufreq_dt_platform_data)));
 }
-device_initcall(cpufreq_dt_platdev_init);
+core_initcall(cpufreq_dt_platdev_init);

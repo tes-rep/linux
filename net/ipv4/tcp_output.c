@@ -1334,7 +1334,7 @@ int tcp_fragment(struct sock *sk, enum tcp_queue tcp_queue,
 		return -ENOMEM;
 	}
 
-	if (skb_unclone(skb, gfp))
+	if (skb_unclone_keeptruesize(skb, gfp))
 		return -ENOMEM;
 
 	/* Get a new skb... force flag on. */
@@ -1443,7 +1443,7 @@ int tcp_trim_head(struct sock *sk, struct sk_buff *skb, u32 len)
 {
 	u32 delta_truesize;
 
-	if (skb_unclone(skb, GFP_ATOMIC))
+	if (skb_unclone_keeptruesize(skb, GFP_ATOMIC))
 		return -ENOMEM;
 
 	delta_truesize = __pskb_trim_head(skb, len);
@@ -2025,7 +2025,7 @@ static bool tcp_tso_should_defer(struct sock *sk, struct sk_buff *skb,
 	/* If next ACK is likely to come too late,
 	 * ie in more than min(1ms, half srtt), do not defer.
 	 */
-	threshold = min(srtt_in_ns >> 1, NSEC_PER_MSEC);
+	threshold = min_t(u64, srtt_in_ns >> 1, NSEC_PER_MSEC);
 
 	if ((s64)(how_far_is_the_ack - threshold) > 0)
 		goto send_now;
@@ -2999,7 +2999,7 @@ start:
 				 cur_mss, GFP_ATOMIC))
 			return -ENOMEM; /* We'll try again later. */
 	} else {
-		if (skb_unclone(skb, GFP_ATOMIC))
+		if (skb_unclone_keeptruesize(skb, GFP_ATOMIC))
 			return -ENOMEM;
 
 		diff = tcp_skb_pcount(skb);

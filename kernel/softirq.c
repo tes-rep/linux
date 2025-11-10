@@ -255,6 +255,10 @@ asmlinkage __visible void __softirq_entry __do_softirq(void)
 	bool in_hardirq;
 	__u32 pending;
 	int softirq_bit;
+#ifdef CONFIG_AMLOGIC_DEBUG_LOCKUP
+	int cpu;
+	unsigned long long tin;
+#endif
 
 	/*
 	 * Mask out PF_MEMALLOC as the current task context is borrowed for the
@@ -289,7 +293,14 @@ restart:
 		kstat_incr_softirqs_this_cpu(vec_nr);
 
 		trace_softirq_entry(vec_nr);
+#ifdef CONFIG_AMLOGIC_DEBUG_LOCKUP
+		cpu = smp_processor_id();
+		sirq_in_hook(cpu, &tin, (void *)h->action);
+#endif
 		h->action(h);
+#ifdef CONFIG_AMLOGIC_DEBUG_LOCKUP
+		sirq_out_hook(cpu, tin, (void *)h->action);
+#endif
 		trace_softirq_exit(vec_nr);
 		if (unlikely(prev_count != preempt_count())) {
 			pr_err("huh, entered softirq %u %s %p with preempt_count %08x, exited with %08x?\n",
@@ -520,10 +531,7 @@ static void tasklet_action_common(struct softirq_action *a,
 				if (!test_and_clear_bit(TASKLET_STATE_SCHED,
 							&t->state))
 					BUG();
-				if (t->use_callback)
-					t->callback(t);
-				else
-					t->func(t->data);
+				t->func(t->data);
 				tasklet_unlock(t);
 				continue;
 			}
@@ -549,18 +557,6 @@ static __latent_entropy void tasklet_hi_action(struct softirq_action *a)
 	tasklet_action_common(a, this_cpu_ptr(&tasklet_hi_vec), HI_SOFTIRQ);
 }
 
-void tasklet_setup(struct tasklet_struct *t,
-		   void (*callback)(struct tasklet_struct *))
-{
-	t->next = NULL;
-	t->state = 0;
-	atomic_set(&t->count, 0);
-	t->callback = callback;
-	t->use_callback = true;
-	t->data = 0;
-}
-EXPORT_SYMBOL(tasklet_setup);
-
 void tasklet_init(struct tasklet_struct *t,
 		  void (*func)(unsigned long), unsigned long data)
 {
@@ -568,7 +564,6 @@ void tasklet_init(struct tasklet_struct *t,
 	t->state = 0;
 	atomic_set(&t->count, 0);
 	t->func = func;
-	t->use_callback = false;
 	t->data = data;
 }
 EXPORT_SYMBOL(tasklet_init);
