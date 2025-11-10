@@ -3085,8 +3085,8 @@ static inline umode_t vfs_prepare_mode(const struct inode *dir, umode_t mode,
 	return mode;
 }
 
-int vfs_create2(struct inode *dir, struct dentry *dentry, umode_t mode,
-		bool want_excl)
+int vfs_create2(struct vfsmount *mnt, struct inode *dir, struct dentry *dentry,
+		umode_t mode, bool want_excl)
 {
 	int error = may_create(mnt, dir, dentry);
 	if (error)
@@ -3094,8 +3094,8 @@ int vfs_create2(struct inode *dir, struct dentry *dentry, umode_t mode,
 
 	if (!dir->i_op->create)
 		return -EACCES;	/* shouldn't it be ENOSYS? */
-
-	mode = vfs_prepare_mode(dir, mode, S_IALLUGO, S_IFREG);
+	mode &= S_IALLUGO;
+	mode |= S_IFREG;
 	error = security_inode_create(dir, dentry, mode);
 	if (error)
 		return error;
