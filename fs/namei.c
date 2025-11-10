@@ -3085,7 +3085,7 @@ static inline umode_t vfs_prepare_mode(const struct inode *dir, umode_t mode,
 	return mode;
 }
 
-int vfs_create(struct inode *dir, struct dentry *dentry, umode_t mode,
+int vfs_create2(struct inode *dir, struct dentry *dentry, umode_t mode,
 		bool want_excl)
 {
 	int error = may_create(mnt, dir, dentry);
