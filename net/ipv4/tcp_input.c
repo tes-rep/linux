@@ -238,11 +238,11 @@ static void tcp_incr_quickack(struct sock *sk, unsigned int max_quickacks)
 
 static void tcp_enter_quickack_mode(struct sock *sk, unsigned int max_quickacks)
 {
-	struct inet_connection_sock *icsk = inet_csk(sk);
+       struct inet_connection_sock *icsk = inet_csk(sk);
 
-	tcp_incr_quickack(sk, max_quickacks);
-	inet_csk_exit_pingpong_mode(sk);
-	icsk->icsk_ack.ato = TCP_ATO_MIN;
+       tcp_incr_quickack(sk, max_quickacks);
+       inet_csk_exit_pingpong_mode(sk);
+       icsk->icsk_ack.ato = TCP_ATO_MIN;
 }
 
 /* Send ACKs quickly, if "quick" count is not exhausted
