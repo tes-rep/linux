@@ -117,6 +117,7 @@ struct snd_pcm_ops {
 #define SNDRV_PCM_RATE_96000		(1U<<10)	/* 96000Hz */
 #define SNDRV_PCM_RATE_176400		(1U<<11)	/* 176400Hz */
 #define SNDRV_PCM_RATE_192000		(1U<<12)	/* 192000Hz */
+#define SNDRV_PCM_RATE_216000		(1U<<13)	/* 216000Hz */
 #define SNDRV_PCM_RATE_352800		(1U<<13)	/* 352800Hz */
 #define SNDRV_PCM_RATE_384000		(1U<<14)	/* 384000Hz */
 
