@@ -2846,10 +2846,8 @@ static irqreturn_t meson_mmc_irq(int irq, void *dev_id)
 	if (status & (IRQ_END_OF_CHAIN | IRQ_RESP_STATUS)) {
 		if (data && !cmd->error)
 			data->bytes_xfered = data->blksz * data->blocks;
-		if (meson_mmc_bounce_buf_read(data))
-			ret = IRQ_WAKE_THREAD;
-		else
-			ret = IRQ_HANDLED;
+
+		return IRQ_WAKE_THREAD;
 	}
 
 out:
@@ -2863,18 +2861,6 @@ out:
 			start &= ~START_DESC_BUSY;
 			writel(start, host->regs + SD_EMMC_START);
 		}
-	}
-
-	if (ret == IRQ_HANDLED) {
-		meson_mmc_read_resp(host->mmc, cmd);
-		if (cmd->error && !host->is_tuning)
-			pr_err("cmd = %d, arg = 0x%x, dev_status = 0x%x\n",
-					cmd->opcode, cmd->arg, cmd->resp[0]);
-		meson_mmc_request_done(host->mmc, cmd->mrq);
-	} else if (ret == IRQ_NONE) {
-		dev_warn(host->dev,
-				"Unexpected IRQ! status=0x%08x, irq_en=0x%08x\n",
-				raw_status, irq_en);
 	}
 
 	return ret;
@@ -4000,7 +3986,9 @@ static int meson_mmc_probe(struct platform_device *pdev)
 	}
 
 	mmc->ops = &meson_mmc_ops;
-	amlogic_add_host(host);
+	ret = mmc_add_host(mmc);
+	if (ret)
+		goto err_free_irq;
 
 	if (aml_card_type_non_sdio(host) && host->sd_uart_init) {
 		struct mmc_gpio *ctx = mmc->slot.handler_priv;

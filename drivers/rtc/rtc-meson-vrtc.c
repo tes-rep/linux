@@ -46,7 +46,7 @@ static int meson_vrtc_read_time(struct device *dev, struct rtc_time *tm)
 	ktime_get_boottime_ts64(&boot_time);
 	time.tv_sec = boot_time.tv_sec + vrtc_init_date;
 #else
-	ktime_get_raw_ts64(&time);
+	ktime_get_real_ts64(&time);
 #endif
 	rtc_time64_to_tm(time.tv_sec, tm);
 
@@ -277,7 +277,7 @@ static int __maybe_unused meson_vrtc_suspend(struct device *dev)
 #endif
 		struct timespec64 time;
 
-		ktime_get_raw_ts64(&time);
+		ktime_get_real_ts64(&time);
 		local_time = time.tv_sec;
 
 #ifdef CONFIG_AMLOGIC_MODIFY
