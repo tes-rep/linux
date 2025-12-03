@@ -326,15 +326,6 @@ static void meson_uart_change_speed(struct uart_port *port, unsigned long baud)
 		val |= AML_UART_BAUD_XTAL;
 	} else {
 		val =  DIV_ROUND_CLOSEST(port->uartclk / 4, baud) - 1;
-		if (of_device_is_compatible(port->dev->of_node, "amlogic,meson-gxl-uart")) {
-			val = DIV_ROUND_CLOSEST(port->uartclk, 2 * baud) - 1;
-			val |= AML_UART_BAUD_XTAL | AML_UART_BAUD_XTAL_DIV2;
-		} else {
-			val = DIV_ROUND_CLOSEST(port->uartclk, 3 * baud) - 1;
-			val |= AML_UART_BAUD_XTAL;
-		}
-	} else {
-		val = DIV_ROUND_CLOSEST(port->uartclk, 4 * baud) - 1;
 	}
 	val |= AML_UART_BAUD_USE;
 	writel(val, port->membase + AML_UART_REG5);
@@ -832,8 +823,8 @@ static const struct of_device_id meson_uart_dt_match[] = {
 	{ .compatible = "amlogic,meson6-uart" },
 	{ .compatible = "amlogic,meson8-uart" },
 	{ .compatible = "amlogic,meson8b-uart" },
+        { .compatible = "amlogic,meson-gxl-uart" },
 	{ .compatible = "amlogic,meson-gx-uart" },
-	{ .compatible = "amlogic,meson-gxl-uart" },
 	{
 		.compatible = "amlogic,meson-g12a-uart",
 		.data = (void *)&meson_g12a_uart_data,
@@ -852,7 +843,7 @@ MODULE_DEVICE_TABLE(of, meson_uart_dt_match);
 
 static  struct platform_driver meson_uart_platform_driver = {
 	.probe		= meson_uart_probe,
-	.remove		= meson_uart_remove,
+	.remove_new	= meson_uart_remove,
 	.driver		= {
 		.name		= "meson_uart",
 		.of_match_table	= meson_uart_dt_match,
