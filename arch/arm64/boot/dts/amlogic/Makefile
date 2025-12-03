@@ -111,3 +111,5 @@ dtb-$(CONFIG_ARCH_MESON) += meson-gxbb-odroidc2-hifishield2.dtb
 dtb-$(CONFIG_ARCH_MESON) += meson-a1-ad401.dtb
 dtb-$(CONFIG_ARCH_MESON) += meson-s4-s805x2-aq222.dtb
 dtb-$(CONFIG_ARCH_MESON) += meson-sc2-s905x4-ah212.dtb
+# dtb-$(CONFIG_ARCH_MESON) += meson-sc2-s905x4-gbit.dtb
+dtb-$(CONFIG_ARCH_MESON) += meson-sc2-s905x4-akari-ax810.dtb
