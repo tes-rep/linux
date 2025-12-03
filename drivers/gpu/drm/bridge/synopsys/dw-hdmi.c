@@ -2379,7 +2379,7 @@ static void initialize_hdmi_ih_mutes(struct dw_hdmi *hdmi)
 	hdmi_writeb(hdmi, ih_mute, HDMI_IH_MUTE);
 }
 
-static void dw_hdmi_poweron(struct dw_hdmi *hdmi)
+void dw_hdmi_poweron(struct dw_hdmi *hdmi)
 {
 	hdmi->bridge_is_on = true;
 
@@ -2389,8 +2389,9 @@ static void dw_hdmi_poweron(struct dw_hdmi *hdmi)
 	 */
 	dw_hdmi_setup(hdmi, hdmi->curr_conn, &hdmi->previous_mode);
 }
+EXPORT_SYMBOL_GPL(dw_hdmi_poweron);
 
-static void dw_hdmi_poweroff(struct dw_hdmi *hdmi)
+void dw_hdmi_poweroff(struct dw_hdmi *hdmi)
 {
 	if (hdmi->phy.enabled) {
 		hdmi->phy.ops->disable(hdmi, hdmi->phy.data);
@@ -2399,6 +2400,7 @@ static void dw_hdmi_poweroff(struct dw_hdmi *hdmi)
 
 	hdmi->bridge_is_on = false;
 }
+EXPORT_SYMBOL_GPL(dw_hdmi_poweroff);
 
 static void dw_hdmi_update_power(struct dw_hdmi *hdmi)
 {
@@ -3643,6 +3645,12 @@ void dw_hdmi_resume(struct dw_hdmi *hdmi)
 	dw_hdmi_init_hw(hdmi);
 }
 EXPORT_SYMBOL_GPL(dw_hdmi_resume);
+
+bool dw_hdmi_is_bridge_on(struct dw_hdmi *hdmi)
+{
+	return !hdmi->disabled;
+}
+EXPORT_SYMBOL_GPL(dw_hdmi_is_bridge_on);
 
 MODULE_AUTHOR("Sascha Hauer <s.hauer@pengutronix.de>");
 MODULE_AUTHOR("Andy Yan <andy.yan@rock-chips.com>");

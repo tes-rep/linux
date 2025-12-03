@@ -448,6 +448,12 @@ static int meson_mmc_clk_init(struct meson_host *host)
 			return dev_err_probe(host->dev, PTR_ERR(clk),
 					     "Missing clock %s\n", name);
 
+		/* clkin0 hierarchy includes dividers and muxes, and bootloader
+		 * may have left whatever settings. Set to XTAL rate.
+		 */
+		if (i == 0)
+			clk_set_rate(clk, 24000000);
+
 		mux_parent_names[i] = __clk_get_name(clk);
 	}
 
@@ -605,6 +611,7 @@ static void meson_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 	case MMC_POWER_OFF:
 		mmc_regulator_set_ocr(mmc, mmc->supply.vmmc, 0);
 		mmc_regulator_disable_vqmmc(mmc);
+		msleep(50);
 
 		break;
 

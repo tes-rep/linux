@@ -59,6 +59,23 @@ config LCD2S
 	  is a simple single color character display. You have to connect it
 	  to an I2C bus.
 
+config ARM_CHARLCD
+	bool "ARM Ltd. Character LCD Driver"
+	depends on PLAT_VERSATILE
+	help
+	  This is a driver for the character LCD found on the ARM Ltd.
+	  Versatile and RealView Platform Baseboards. It doesn't do
+	  very much more than display the text "ARM Linux" on the first
+	  line and the Linux version on the second line, but that's
+	  still useful.
+
+config FD6551
+	tristate "FD6551 driver for LED 7 segment displays"
+	depends on I2C_GPIO
+	depends on OF || COMPILE_TEST
+	help
+	  Say Y to enable support for FD6551
+
 menuconfig PARPORT_PANEL
 	tristate "Parallel port LCD/Keypad Panel support"
 	depends on PARPORT
@@ -526,6 +543,59 @@ config SEG_LED_GPIO
 	  This driver can also be built as a module. If so, the module
 	  will be called seg-led-gpio.
 
+config TM16XX
+	tristate "TM16xx LED matrix display controllers" if COMPILE_TEST
+	depends on INPUT
+	select INPUT_MATRIXKMAP
+	select LEDS_CLASS
+	select LEDS_TRIGGERS
+	select LINEDISP
+	select NEW_LEDS
+	select TM16XX_KEYPAD if (INPUT)
+	help
+	  Core support for TM16xx-compatible 7-segment LED matrix display
+	  controllers from multiple vendors (Titan Micro, Fuda Hisi, i-Core,
+	  Princeton, Winrise). Provides LED class integration for display
+	  control and optional keypad scanning support.
+
+config TM16XX_KEYPAD
+	bool
+	depends on TM16XX
+	help
+	  Enable optional keyscan support for TM16XX driver.
+
+config TM16XX_I2C
+	tristate "TM16XX-compatible I2C 7-segment LED controllers with keyscan"
+	depends on I2C
+	select TM16XX
+	help
+	  This driver supports the following TM16XX compatible
+	  I2C (2-wire) 7-segment led display chips:
+	  - Titanmec: TM1650
+	  - Fuda Hisi: FD650, FD655, FD6551
+	  - i-Core: AiP650
+	  - Winrise: HBS658
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called tm16xx_i2c and you will also get tm16xx for the
+	  core module.
+
+config TM16XX_SPI
+	tristate "TM16XX-compatible SPI 7-segment LED controllers with keyscan"
+	depends on SPI
+	select TM16XX
+	help
+	  This driver supports the following TM16XX compatible
+	  SPI (3-wire) 7-segment led display chips:
+	  - Titanmec: TM1618, TM1620, TM1628, TM1638
+	  - Fuda Hisi: FD620, FD628
+	  - i-Core: AiP1618, AiP1628
+	  - Princeton: PT6964
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called tm16xx_spi and you will also get tm16xx for the
+	  core module.
+
 #
 # Character LCD with non-conforming interface section
 #
@@ -549,10 +619,3 @@ config PANEL
 	depends on PARPORT
 	select AUXDISPLAY
 	select PARPORT_PANEL
-
-config FD6551
-	tristate "FD6551 driver for LED 7 segment displays"
-	depends on I2C_GPIO
-	depends on OF || COMPILE_TEST
-	help
-	  Say Y to enable support for FD6551

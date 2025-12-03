@@ -321,10 +321,11 @@ no_leds:
 	return 0;
 }
 
-static void fd6551_remove(struct i2c_client *client)
+static int fd6551_remove(struct i2c_client *client)
 {
 	device_remove_file(&client->dev, &dev_attr_display_text);
 
+	return fd6551_display_on(client, false);
 }
 
 static void fd6551_shutdown(struct i2c_client *client)
@@ -349,7 +350,7 @@ static struct i2c_driver fd6551_driver = {
 		.name   = "fd6551",
 		.of_match_table = fd6551_of_matches,
 	},
-	.probe  	= fd6551_probe,
+	.probe_new	= fd6551_probe,
 	.remove		= fd6551_remove,
 	.shutdown	= fd6551_shutdown,
 	.id_table	= fd6551_i2c_ids,
