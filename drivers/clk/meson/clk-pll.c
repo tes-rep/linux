@@ -312,32 +312,34 @@ static int meson_clk_pll_init(struct clk_hw *hw)
 {
 	struct clk_regmap *clk = to_clk_regmap(hw);
 	struct meson_clk_pll_data *pll = meson_clk_pll_data(clk);
-	int ret;
+	int ret, retries;
 
 	ret = clk_regmap_init(hw);
 	if (ret)
 		return ret;
 
-	/*
-	 * Keep the clock running, which was already initialized and enabled
-	 * from the bootloader stage, to avoid any glitches.
-	 */
 	if ((pll->flags & CLK_MESON_PLL_NOINIT_ENABLED) &&
-	    meson_clk_pll_is_enabled(hw))
+	   meson_clk_pll_is_enabled(hw))
 		return 0;
 
-	if (pll->init_count) {
-		if (MESON_PARM_APPLICABLE(&pll->rst))
-			meson_parm_write(clk->map, &pll->rst, 1);
+	for (retries = 0; retries < 10; retries++) {
+		if (pll->init_count) {
+			if (MESON_PARM_APPLICABLE(&pll->rst))
+				meson_parm_write(clk->map, &pll->rst, 1);
 
-		regmap_multi_reg_write(clk->map, pll->init_regs,
-				       pll->init_count);
+			regmap_multi_reg_write(clk->map, pll->init_regs,
+					       pll->init_count);
 
-		if (MESON_PARM_APPLICABLE(&pll->rst))
-			meson_parm_write(clk->map, &pll->rst, 0);
+			if (MESON_PARM_APPLICABLE(&pll->rst))
+				meson_parm_write(clk->map, &pll->rst, 0);
+		}
+
+		if (!meson_clk_pll_wait_lock(hw))
+			return 0;
+
+		pr_info("Meson PLL: retry enabling..\n");
 	}
-
-	return 0;
+	return -EIO;
 }
 
 static int meson_clk_pcie_pll_enable(struct clk_hw *hw)
