@@ -21,6 +21,7 @@
 #include "vid-pll-div.h"
 #include "clk-dualdiv.h"
 #include "sc2.h"
+#include "meson-clkc-utils.h"
 #include <dt-bindings/clock/amlogic,sc2-clkc.h>
 
 static struct clk_regmap sc2_fixed_pll_dco = {
