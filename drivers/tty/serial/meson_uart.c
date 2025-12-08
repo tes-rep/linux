@@ -824,6 +824,7 @@ static const struct of_device_id meson_uart_dt_match[] = {
 	{ .compatible = "amlogic,meson8-uart" },
 	{ .compatible = "amlogic,meson8b-uart" },
 	{ .compatible = "amlogic,meson-gx-uart" },
+        { .compatible = "amlogic,meson-gxl-uart" },
 	{
 		.compatible = "amlogic,meson-g12a-uart",
 		.data = (void *)&meson_g12a_uart_data,
