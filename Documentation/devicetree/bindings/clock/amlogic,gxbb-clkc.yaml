@@ -18,6 +18,7 @@ properties:
       - amlogic,g12a-clkc
       - amlogic,g12b-clkc
       - amlogic,sm1-clkc
+      - amlogic,sc2-clkc
 
   clocks:
     maxItems: 1
